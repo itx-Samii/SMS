@@ -16,7 +16,7 @@ export async function POST(request: Request) {
 
     const users = await readData<any>('users.txt');
     const user = users.find(u => 
-      (u.id === userId || u.name === id) && 
+      (u.id === userId || u.name.trim().toLowerCase() === id.trim().toLowerCase()) && 
       u.password === password && 
       u.role === role.toUpperCase()
     );
