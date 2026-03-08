@@ -1,0 +1,71 @@
+[
+  {
+    "id": 1,
+    "name": "System Admin",
+    "password": "admin",
+    "role": "ADMIN",
+    "createdAt": "2024-03-08T00:00:00.000Z"
+  },
+  {
+    "id": 2,
+    "name": "Sarah Jenkins",
+    "password": "123",
+    "role": "TEACHER",
+    "assignedClassId": 1,
+    "createdAt": "2024-03-08T00:00:00.000Z"
+  },
+  {
+    "id": 3,
+    "name": "Alex Johnson",
+    "password": "123",
+    "role": "STUDENT",
+    "classId": 1,
+    "section": "Sec-A",
+    "rollNumber": "101",
+    "fatherName": "Mark Johnson",
+    "motherName": "Linda Johnson",
+    "gender": "Male",
+    "dob": "2012-04-15",
+    "contactNumber": "555-0101",
+    "parentContactNumber": "555-0202",
+    "address": "456 Oak Lane, Springfield",
+    "admissionDate": "2021-08-20",
+    "feeStatus": "Paid",
+    "createdAt": "2024-03-08T00:00:00.000Z"
+  },
+  {
+    "id": 4,
+    "name": "Mark Johnson",
+    "password": "123",
+    "role": "PARENT",
+    "childId": 3,
+    "createdAt": "2024-03-08T00:00:00.000Z"
+  },
+  {
+    "id": 5,
+    "name": "Michael Scott",
+    "password": "123",
+    "role": "TEACHER",
+    "assignedClassId": 2,
+    "createdAt": "2024-03-08T00:00:00.000Z"
+  },
+  {
+    "id": 6,
+    "name": "Jim Halpert",
+    "password": "123",
+    "role": "STUDENT",
+    "classId": 2,
+    "section": "Sec-A",
+    "rollNumber": "201",
+    "fatherName": "James Halpert",
+    "motherName": "Betsy Halpert",
+    "gender": "Male",
+    "dob": "2010-10-01",
+    "contactNumber": "555-3333",
+    "parentContactNumber": "555-4444",
+    "address": "123 Scranton Way",
+    "admissionDate": "2021-08-15",
+    "feeStatus": "Pending",
+    "createdAt": "2024-03-08T00:00:00.000Z"
+  }
+]
