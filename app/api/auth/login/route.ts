@@ -12,9 +12,7 @@ export async function POST(request: Request) {
     }
 
     const userId = parseInt(id, 10);
-    if (isNaN(userId)) {
-      return NextResponse.json({ error: 'Invalid ID format' }, { status: 400 });
-    }
+    // Remove strict isNaN check to allow name-based login
 
     const users = await readData<any>('users.txt');
     const user = users.find(u => 
