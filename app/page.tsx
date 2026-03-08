@@ -124,11 +124,11 @@ export default function Home() {
             </div>
 
             <div className="animate-fade-in" style={{ animationDelay: "0.2s" }}>
-              <label style={{ display: "block", fontSize: "0.85rem", fontWeight: 600, color: "var(--text-muted)", marginBottom: "0.5rem", textTransform: "uppercase", letterSpacing: "0.05em" }}>User ID</label>
+              <label style={{ display: "block", fontSize: "0.85rem", fontWeight: 600, color: "var(--text-muted)", marginBottom: "0.5rem", textTransform: "uppercase", letterSpacing: "0.05em" }}>User ID or Name</label>
               <input 
-                type="number" 
+                type="text" 
                 required 
-                placeholder="e.g. 101" 
+                placeholder="e.g. 1 or System Admin" 
                 value={id} 
                 onChange={(e) => setId(e.target.value)} 
                 style={{ padding: "0.85rem 1rem", fontSize: "1rem" }}

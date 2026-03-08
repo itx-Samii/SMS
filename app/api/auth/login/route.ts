@@ -17,7 +17,11 @@ export async function POST(request: Request) {
     }
 
     const users = await readData<any>('users.txt');
-    const user = users.find(u => u.id === userId && u.password === password && u.role === role.toUpperCase());
+    const user = users.find(u => 
+      (u.id === userId || u.name === id) && 
+      u.password === password && 
+      u.role === role.toUpperCase()
+    );
 
     if (!user) {
       return NextResponse.json({ error: 'Invalid credentials' }, { status: 401 });
