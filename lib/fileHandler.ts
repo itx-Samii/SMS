@@ -24,7 +24,22 @@ export async function readData<T>(fileName: string): Promise<T[]> {
   await ensureFileExists(filePath);
   try {
     const data = await fs.readFile(filePath, 'utf8');
-    return JSON.parse(data || '[]');
+    const parsedData = JSON.parse(data || '[]');
+    
+    // Seed default admin if users file is empty
+    if (fileName === 'users.txt' && parsedData.length === 0) {
+      const defaultAdmin = [{
+        id: 1,
+        name: "System Admin",
+        password: "admin",
+        role: "ADMIN",
+        createdAt: new Date().toISOString()
+      }];
+      await fs.writeFile(filePath, JSON.stringify(defaultAdmin, null, 2), 'utf8');
+      return defaultAdmin as unknown as T[];
+    }
+    
+    return parsedData;
   } catch (err) {
     console.error(`Error reading ${fileName}:`, err);
     return [];
