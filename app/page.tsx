@@ -12,6 +12,97 @@ export default function Home() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
+  const [showForgotModal, setShowForgotModal] = useState(false);
+  const [forgotStep, setForgotStep] = useState(1); // 1: Verify, 2: Reset
+  const [forgotData, setForgotData] = useState({
+    role: "STUDENT",
+    identifier: "",
+    contactNumber: "",
+    newPassword: "",
+    confirmPassword: ""
+  });
+  const [forgotError, setForgotError] = useState("");
+  const [forgotSuccess, setForgotSuccess] = useState("");
+  const [forgotLoading, setForgotLoading] = useState(false);
+  const [verifiedUserId, setVerifiedUserId] = useState<number | null>(null);
+
+  const handleVerifyAccount = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setForgotLoading(true);
+    setForgotError("");
+    try {
+      const res = await fetch("/api/auth/verify-account", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          role: forgotData.role,
+          identifier: forgotData.identifier,
+          contactNumber: forgotData.contactNumber
+        }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Verification failed");
+      
+      setVerifiedUserId(data.userId);
+      setForgotStep(2);
+    } catch (err: any) {
+      setForgotError(err.message);
+    } finally {
+      setForgotLoading(false);
+    }
+  };
+
+  const handleResetPassword = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (forgotData.newPassword !== forgotData.confirmPassword) {
+      setForgotError("Passwords do not match");
+      return;
+    }
+    if (forgotData.newPassword.length < 6) {
+      setForgotError("Password must be at least 6 characters");
+      return;
+    }
+
+    setForgotLoading(true);
+    setForgotError("");
+    try {
+      const res = await fetch("/api/auth/reset-password", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          userId: verifiedUserId,
+          newPassword: forgotData.newPassword
+        }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Reset failed");
+      
+      setForgotSuccess(data.message);
+      setTimeout(() => {
+        handleCloseForgot();
+      }, 3000);
+    } catch (err: any) {
+      setForgotError(err.message);
+    } finally {
+      setForgotLoading(false);
+    }
+  };
+
+  const handleCloseForgot = () => {
+    setShowForgotModal(false);
+    setForgotStep(1);
+    setForgotData({
+      role: "STUDENT",
+      identifier: "",
+      contactNumber: "",
+      newPassword: "",
+      confirmPassword: ""
+    });
+    setForgotError("");
+    setForgotSuccess("");
+    setVerifiedUserId(null);
+  };
+
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
@@ -142,7 +233,7 @@ export default function Home() {
                    href="#" 
                    onClick={(e) => {
                      e.preventDefault();
-                     alert("Please contact school administration to reset your password.");
+                     setShowForgotModal(true);
                    }}
                    style={{ fontSize: "0.85rem", color: "var(--primary)", textDecoration: "none" }}
                  >
@@ -172,6 +263,103 @@ export default function Home() {
 
         </div>
       </div>
+
+      {/* Forgot Password Modal */}
+      {showForgotModal && (
+        <div style={{ position: "fixed", top: 0, left: 0, right: 0, bottom: 0, backgroundColor: "rgba(0,0,0,0.85)", backdropFilter: "blur(8px)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 100, padding: "1rem" }}>
+          <div className="glass-card animate-fade-in" style={{ width: "100%", maxWidth: "440px", padding: "2.5rem", backgroundColor: "var(--surface)" }}>
+            <div style={{ textAlign: "center", marginBottom: "2rem" }}>
+               <h2 style={{ fontSize: "1.5rem", fontWeight: 700, marginBottom: "0.5rem" }}>Password Recovery</h2>
+               <p style={{ color: "var(--text-muted)", fontSize: "0.9rem" }}>
+                 {forgotStep === 1 ? "Verify your account details" : "Set your new secure password"}
+               </p>
+            </div>
+
+            {forgotError && (
+              <div className="animate-fade-in" style={{ background: "rgba(239, 68, 68, 0.1)", border: "1px solid rgba(239, 68, 68, 0.2)", color: "var(--danger)", padding: "0.75rem", borderRadius: "8px", fontSize: "0.85rem", marginBottom: "1.5rem" }}>
+                ⚠️ {forgotError}
+              </div>
+            )}
+
+            {forgotSuccess && (
+              <div className="animate-fade-in" style={{ background: "rgba(34, 197, 94, 0.1)", border: "1px solid rgba(34, 197, 94, 0.2)", color: "var(--success)", padding: "0.75rem", borderRadius: "8px", fontSize: "0.85rem", marginBottom: "1.5rem" }}>
+                ✅ {forgotSuccess}
+              </div>
+            )}
+
+            {forgotStep === 1 ? (
+              <form onSubmit={handleVerifyAccount} style={{ display: "flex", flexDirection: "column", gap: "1.25rem" }}>
+                <div>
+                  <label style={{ display: "block", fontSize: "0.8rem", fontWeight: 600, color: "var(--text-muted)", marginBottom: "0.5rem", textTransform: "uppercase" }}>Account Type</label>
+                  <select 
+                    value={forgotData.role} 
+                    onChange={e => setForgotData({...forgotData, role: e.target.value})}
+                    style={{ width: "100%", padding: "0.75rem", borderRadius: "8px", backgroundColor: "var(--bg-dark)", border: "1px solid var(--border)", color: "#fff" }}
+                  >
+                    <option value="STUDENT">Student</option>
+                    <option value="TEACHER">Teacher</option>
+                    <option value="PARENT">Parent</option>
+                    <option value="ADMIN">Admin</option>
+                  </select>
+                </div>
+                <div>
+                  <label style={{ display: "block", fontSize: "0.8rem", fontWeight: 600, color: "var(--text-muted)", marginBottom: "0.5rem", textTransform: "uppercase" }}>User ID or Roll #</label>
+                  <input 
+                    required 
+                    placeholder="e.g. 1 or 1042" 
+                    value={forgotData.identifier} 
+                    onChange={e => setForgotData({...forgotData, identifier: e.target.value})}
+                  />
+                </div>
+                <div>
+                  <label style={{ display: "block", fontSize: "0.8rem", fontWeight: 600, color: "var(--text-muted)", marginBottom: "0.5rem", textTransform: "uppercase" }}>Registered Contact</label>
+                  <input 
+                    required 
+                    placeholder="e.g. 03001234567" 
+                    value={forgotData.contactNumber} 
+                    onChange={e => setForgotData({...forgotData, contactNumber: e.target.value})}
+                  />
+                </div>
+                <div style={{ display: "flex", gap: "1rem", marginTop: "1rem" }}>
+                  <button type="button" onClick={handleCloseForgot} className="btn-ghost" style={{ flex: 1 }}>Back</button>
+                  <button type="submit" className="btn-primary" style={{ flex: 1 }} disabled={forgotLoading}>
+                    {forgotLoading ? "Verifying..." : "Verify Account"}
+                  </button>
+                </div>
+              </form>
+            ) : (
+              <form onSubmit={handleResetPassword} style={{ display: "flex", flexDirection: "column", gap: "1.25rem" }}>
+                <div>
+                  <label style={{ display: "block", fontSize: "0.8rem", fontWeight: 600, color: "var(--text-muted)", marginBottom: "0.5rem", textTransform: "uppercase" }}>New Password</label>
+                  <input 
+                    type="password"
+                    required 
+                    placeholder="Min. 6 characters" 
+                    value={forgotData.newPassword} 
+                    onChange={e => setForgotData({...forgotData, newPassword: e.target.value})}
+                  />
+                </div>
+                <div>
+                  <label style={{ display: "block", fontSize: "0.8rem", fontWeight: 600, color: "var(--text-muted)", marginBottom: "0.5rem", textTransform: "uppercase" }}>Confirm Password</label>
+                  <input 
+                    type="password"
+                    required 
+                    placeholder="Repeat password" 
+                    value={forgotData.confirmPassword} 
+                    onChange={e => setForgotData({...forgotData, confirmPassword: e.target.value})}
+                  />
+                </div>
+                <div style={{ display: "flex", gap: "1rem", marginTop: "1rem" }}>
+                  <button type="button" onClick={() => setForgotStep(1)} className="btn-ghost" style={{ flex: 1 }} disabled={forgotLoading}>Back</button>
+                  <button type="submit" className="btn-primary" style={{ flex: 1 }} disabled={forgotLoading}>
+                    {forgotLoading ? "Resetting..." : "Update Password"}
+                  </button>
+                </div>
+              </form>
+            )}
+          </div>
+        </div>
+      )}
     </main>
   );
 }

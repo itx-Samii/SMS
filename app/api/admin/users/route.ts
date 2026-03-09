@@ -75,14 +75,14 @@ export async function POST(request: Request) {
     
     // Server-side validation
     const roleUpper = role.toUpperCase();
-    if (roleUpper === 'STUDENT') {
-      const contactPattern = /^[0-9]{11}$/;
-      if (contactNumber && !contactPattern.test(contactNumber)) {
-        return NextResponse.json({ error: 'Student contact number must be 11 digits' }, { status: 400 });
-      }
-      if (parentContactNumber && !contactPattern.test(parentContactNumber)) {
-        return NextResponse.json({ error: 'Parent contact number must be 11 digits' }, { status: 400 });
-      }
+    
+    const contactPattern = /^[0-9]{11}$/;
+    if (contactNumber && !contactPattern.test(contactNumber)) {
+      return NextResponse.json({ error: 'Contact number must be 11 digits' }, { status: 400 });
+    }
+
+    if (roleUpper === 'STUDENT' && parentContactNumber && !contactPattern.test(parentContactNumber)) {
+      return NextResponse.json({ error: 'Parent contact number must be 11 digits' }, { status: 400 });
     }
 
     if (roleUpper === 'PARENT') {
@@ -110,6 +110,7 @@ export async function POST(request: Request) {
       childId: childId ? parseInt(childId, 10) : null,
       subject: subject || null,
       category: category || null, // Added category
+      contactNumber: contactNumber || null,
       createdAt: new Date().toISOString(),
       ...(role.toUpperCase() === 'STUDENT' && {
         section, rollNumber, fatherName, motherName, gender, dob,
@@ -148,14 +149,14 @@ export async function PUT(request: Request) {
 
     // Server-side validation
     const roleUpper = role.toUpperCase();
-    if (roleUpper === 'STUDENT') {
-      const contactPattern = /^[0-9]{11}$/;
-      if (contactNumber && !contactPattern.test(contactNumber)) {
-        return NextResponse.json({ error: 'Student contact number must be 11 digits' }, { status: 400 });
-      }
-      if (parentContactNumber && !contactPattern.test(parentContactNumber)) {
-        return NextResponse.json({ error: 'Parent contact number must be 11 digits' }, { status: 400 });
-      }
+    
+    const contactPattern = /^[0-9]{11}$/;
+    if (contactNumber && !contactPattern.test(contactNumber)) {
+      return NextResponse.json({ error: 'Contact number must be 11 digits' }, { status: 400 });
+    }
+
+    if (roleUpper === 'STUDENT' && parentContactNumber && !contactPattern.test(parentContactNumber)) {
+      return NextResponse.json({ error: 'Parent contact number must be 11 digits' }, { status: 400 });
     }
 
     if (roleUpper === 'PARENT') {
@@ -180,6 +181,7 @@ export async function PUT(request: Request) {
       childId: childId ? parseInt(childId, 10) : null,
       subject: subject || null,
       category: category || users[userIndex].category || "Normal",
+      contactNumber: contactNumber || users[userIndex].contactNumber || null,
       ...(role.toUpperCase() === 'STUDENT' && {
         section, rollNumber, fatherName, motherName, gender, dob,
         contactNumber, parentContactNumber, address, admissionDate, feeStatus, scholarshipGrade,
