@@ -49,7 +49,28 @@ export async function POST(request: Request) {
 
     if (!user) {
       console.log(`Verification failed for: Role: ${roleUpper}, Identifier: ${identifier}, Contact: ${contactNumber}`);
-      return NextResponse.json({ error: 'Account not found or contact number incorrect' }, { status: 404 });
+      
+      // Diagnostic check to see WHY it failed
+      const userExists = users.find((u: any) => {
+          const roleMatch = u.role === roleUpper;
+          const reqIdentifier = identifier.toString().trim().toLowerCase();
+          const dbId = u.id.toString();
+          const dbName = (u.name || "").toString().trim().toLowerCase();
+          const dbRoll = (u.rollNumber || "").toString().trim().toLowerCase();
+          let idMatch = false;
+          if (roleUpper === 'STUDENT') idMatch = dbRoll === reqIdentifier || dbId === reqIdentifier;
+          else idMatch = dbId === reqIdentifier || dbName === reqIdentifier;
+          return roleMatch && idMatch;
+      });
+
+      if (userExists) {
+          if (!userExists.contactNumber) {
+              return NextResponse.json({ error: 'This account has no registered contact number. Please contact the school office.' }, { status: 404 });
+          }
+          return NextResponse.json({ error: 'Registered contact number does not match your input.' }, { status: 404 });
+      }
+
+      return NextResponse.json({ error: 'Account not found. Please verify your Role and ID/Name.' }, { status: 404 });
     }
 
     // Return limited info for verification success
