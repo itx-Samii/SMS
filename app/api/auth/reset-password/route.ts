@@ -18,9 +18,13 @@ export async function POST(request: Request) {
     }
 
     const users = await readData<any>('users.txt');
-    const userIndex = users.findIndex((u: any) => u.id === userId);
+    const targetId = parseInt(userId.toString(), 10);
+    const userIndex = users.findIndex((u: any) => u.id === targetId);
+
+    console.log(`Resetting password for User ID: ${targetId} (Original: ${userId})`);
 
     if (userIndex === -1) {
+      console.log(`Reset failed: User with ID ${targetId} not found in users.txt`);
       return NextResponse.json({ error: 'User not found' }, { status: 404 });
     }
 
@@ -28,6 +32,7 @@ export async function POST(request: Request) {
     users[userIndex].password = newPassword;
 
     await writeData('users.txt', users);
+    console.log(`Password successfully updated for User: ${users[userIndex].name}`);
 
     return NextResponse.json({ 
       success: true, 
