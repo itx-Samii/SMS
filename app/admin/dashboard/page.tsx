@@ -28,6 +28,9 @@ interface User {
   feeStatus?: string;
   category?: string;
   scholarshipGrade?: string; // New field
+  totalFee?: string; // New field
+  paidFee?: string;  // New field
+  remainingFee?: string; // New field
   subject?: string;
   child?: { name: string; rollNumber: string };
 }
@@ -58,7 +61,8 @@ export default function AdminDashboard() {
     name: "", password: "", classId: "", section: "Sec-A", rollNumber: "",
     fatherName: "", motherName: "", gender: "Male", dob: "", 
     contactNumber: "", parentContactNumber: "", address: "", 
-    admissionDate: "", feeStatus: "Paid", category: "Normal", scholarshipGrade: "A"
+    admissionDate: "", feeStatus: "Paid", category: "Normal", scholarshipGrade: "A",
+    totalFee: "0", paidFee: "0", remainingFee: "0"
   });
   
   const [classForm, setClassForm] = useState({ name: "", teacherId: "" });
@@ -254,7 +258,8 @@ export default function AdminDashboard() {
           name: "", password: "", classId: "", section: "Sec-A", rollNumber: "",
           fatherName: "", motherName: "", gender: "Male", dob: "", 
           contactNumber: "", parentContactNumber: "", address: "", 
-          admissionDate: "", feeStatus: "Paid", category: "Normal", scholarshipGrade: "A"
+          admissionDate: "", feeStatus: "Paid", category: "Normal", scholarshipGrade: "A",
+          totalFee: "0", paidFee: "0", remainingFee: "0"
         });
         fetchData();
       } else {
@@ -340,7 +345,10 @@ export default function AdminDashboard() {
       admissionDate: u.admissionDate || "",
       feeStatus: u.feeStatus || "Paid",
       category: u.category || "Normal",
-      scholarshipGrade: u.scholarshipGrade || "A"
+      scholarshipGrade: u.scholarshipGrade || "A",
+      totalFee: u.totalFee?.toString() || "0",
+      paidFee: u.paidFee?.toString() || "0",
+      remainingFee: u.remainingFee?.toString() || "0"
     });
     setShowStudentModal(true);
   };
@@ -676,6 +684,44 @@ export default function AdminDashboard() {
                       <div>
                         <label style={{ display: "block", marginBottom: "0.4rem", fontSize: "0.8rem", color: "var(--text-muted)" }}>{editingUserId ? "Reset Password" : "Login Password"}</label>
                         <input type="password" placeholder="Pass123!" value={studentForm.password} onChange={e => setStudentForm({...studentForm, password: e.target.value})} {...(!editingUserId ? { required: true } : {})} />
+                      </div>
+                    </div>
+
+                    {/* Financial Summary Fields */}
+                    <div style={{ marginTop: "1rem", padding: "1rem", backgroundColor: "rgba(255,255,255,0.02)", borderRadius: "10px", border: "1px solid var(--border)", display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: "1rem" }}>
+                      <div>
+                        <label style={{ display: "block", marginBottom: "0.4rem", fontSize: "0.8rem", color: "var(--text-muted)" }}>Total Fee (Rs.)</label>
+                        <input 
+                          type="number" 
+                          placeholder="0" 
+                          value={studentForm.totalFee} 
+                          onChange={e => {
+                            const total = parseFloat(e.target.value) || 0;
+                            const paid = parseFloat(studentForm.paidFee) || 0;
+                            setStudentForm({...studentForm, totalFee: e.target.value, remainingFee: (total - paid).toString()});
+                          }} 
+                        />
+                      </div>
+                      <div>
+                        <label style={{ display: "block", marginBottom: "0.4rem", fontSize: "0.8rem", color: "var(--text-muted)" }}>Paid Fee (Rs.)</label>
+                        <input 
+                          type="number" 
+                          placeholder="0" 
+                          value={studentForm.paidFee} 
+                          onChange={e => {
+                            const total = parseFloat(studentForm.totalFee) || 0;
+                            const paid = parseFloat(e.target.value) || 0;
+                            setStudentForm({...studentForm, paidFee: e.target.value, remainingFee: (total - paid).toString()});
+                          }} 
+                        />
+                      </div>
+                      <div>
+                        <label style={{ display: "block", marginBottom: "0.4rem", fontSize: "0.8rem", color: "var(--text-muted)" }}>Remaining Fee</label>
+                        <input 
+                          readOnly 
+                          value={studentForm.remainingFee} 
+                          style={{ backgroundColor: "rgba(0,0,0,0.3)", opacity: 0.8, color: "var(--warning)" }}
+                        />
                       </div>
                     </div>
                   </div>
@@ -1183,7 +1229,8 @@ export default function AdminDashboard() {
                                           name: "", password: "", classId: c.id.toString(), section: "Sec-A", rollNumber: "",
                                           fatherName: "", motherName: "", gender: "Male", dob: "", 
                                           contactNumber: "", parentContactNumber: "", address: "", 
-                                          admissionDate: "", feeStatus: "Paid", category: "Normal", scholarshipGrade: "A"
+                                          admissionDate: "", feeStatus: "Paid", category: "Normal", scholarshipGrade: "A",
+                                          totalFee: "0", paidFee: "0", remainingFee: "0"
                                         });
                                         setShowStudentModal(true);
                                      }}>+ Enroll Student Here</button>

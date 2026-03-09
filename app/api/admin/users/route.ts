@@ -67,7 +67,8 @@ export async function POST(request: Request) {
     const { 
       name, password, role, classId, assignedClassId, childId, subject,
       section, rollNumber, fatherName, motherName, gender, dob,
-      contactNumber, parentContactNumber, address, admissionDate, feeStatus, category, scholarshipGrade
+      contactNumber, parentContactNumber, address, admissionDate, feeStatus, category, scholarshipGrade,
+      totalFee, paidFee, remainingFee
     } = body;
 
     const users = await readData<any>('users.txt');
@@ -112,7 +113,8 @@ export async function POST(request: Request) {
       createdAt: new Date().toISOString(),
       ...(role.toUpperCase() === 'STUDENT' && {
         section, rollNumber, fatherName, motherName, gender, dob,
-        contactNumber, parentContactNumber, address, admissionDate, feeStatus, scholarshipGrade
+        contactNumber, parentContactNumber, address, admissionDate, feeStatus, scholarshipGrade,
+        totalFee: totalFee || "0", paidFee: paidFee || "0", remainingFee: remainingFee || "0"
       })
     };
 
@@ -132,7 +134,8 @@ export async function PUT(request: Request) {
     const { 
       id, name, password, role, classId, assignedClassId, childId, subject,
       section, rollNumber, fatherName, motherName, gender, dob,
-      contactNumber, parentContactNumber, address, admissionDate, feeStatus, category, scholarshipGrade 
+      contactNumber, parentContactNumber, address, admissionDate, feeStatus, category, scholarshipGrade,
+      totalFee, paidFee, remainingFee 
     } = body;
 
     let users = await readData<any>('users.txt');
@@ -179,7 +182,10 @@ export async function PUT(request: Request) {
       category: category || users[userIndex].category || "Normal",
       ...(role.toUpperCase() === 'STUDENT' && {
         section, rollNumber, fatherName, motherName, gender, dob,
-        contactNumber, parentContactNumber, address, admissionDate, feeStatus, scholarshipGrade
+        contactNumber, parentContactNumber, address, admissionDate, feeStatus, scholarshipGrade,
+        totalFee: totalFee || users[userIndex].totalFee || "0", 
+        paidFee: paidFee || users[userIndex].paidFee || "0", 
+        remainingFee: remainingFee || users[userIndex].remainingFee || "0"
       })
     };
 

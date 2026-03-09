@@ -11,8 +11,12 @@
     "name": "Sarah Jenkins",
     "password": "123",
     "role": "TEACHER",
-    "assignedClassId": 1,
-    "createdAt": "2024-03-08T00:00:00.000Z"
+    "assignedClassId": 3,
+    "createdAt": "2024-03-08T00:00:00.000Z",
+    "classId": null,
+    "childId": null,
+    "subject": null,
+    "category": "Normal"
   },
   {
     "id": 3,
