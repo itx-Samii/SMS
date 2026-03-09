@@ -28,22 +28,27 @@ export async function POST(request: Request) {
       const contactMatch = dbContact === reqContact;
       
       let identifierMatch = false;
+      const dbId = u.id.toString();
+      const dbName = (u.name || "").toString().trim().toLowerCase();
+      const dbRoll = (u.rollNumber || "").toString().trim().toLowerCase();
+
       if (roleUpper === 'STUDENT') {
-        // Students: check Roll Number or ID
-        const dbRoll = (u.rollNumber || "").toString().trim().toLowerCase();
-        const dbId = u.id.toString();
         identifierMatch = dbRoll === reqIdentifier || dbId === reqIdentifier;
       } else {
-        // Others: check ID or Name
-        const dbId = u.id.toString();
-        const dbName = (u.name || "").toString().trim().toLowerCase();
         identifierMatch = dbId === reqIdentifier || dbName === reqIdentifier;
+      }
+
+      // Debug logging to help identify mismatches on live server
+      console.log(`Checking User [${u.id}]: RoleMatch: ${roleMatch}, IdentifierMatch: ${identifierMatch}, ContactMatch: ${contactMatch}`);
+      if (roleMatch && identifierMatch && !contactMatch) {
+         console.log(`Mismatch details -> ReqContact: "${reqContact}", DBContact: "${dbContact}"`);
       }
 
       return roleMatch && identifierMatch && contactMatch;
     });
 
     if (!user) {
+      console.log(`Verification failed for: Role: ${roleUpper}, Identifier: ${identifier}, Contact: ${contactNumber}`);
       return NextResponse.json({ error: 'Account not found or contact number incorrect' }, { status: 404 });
     }
 
