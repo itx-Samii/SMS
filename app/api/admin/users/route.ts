@@ -73,7 +73,8 @@ export async function POST(request: Request) {
     const users = await readData<any>('users.txt');
     
     // Server-side validation
-    if (role.toUpperCase() === 'STUDENT') {
+    const roleUpper = role.toUpperCase();
+    if (roleUpper === 'STUDENT') {
       const contactPattern = /^[0-9]{11}$/;
       if (contactNumber && !contactPattern.test(contactNumber)) {
         return NextResponse.json({ error: 'Student contact number must be 11 digits' }, { status: 400 });
@@ -81,6 +82,19 @@ export async function POST(request: Request) {
       if (parentContactNumber && !contactPattern.test(parentContactNumber)) {
         return NextResponse.json({ error: 'Parent contact number must be 11 digits' }, { status: 400 });
       }
+    }
+
+    if (roleUpper === 'PARENT') {
+      if (!childId) return NextResponse.json({ error: 'Child Student ID is required for Parents' }, { status: 400 });
+      const child = users.find(u => u.id === parseInt(childId, 10) && u.role === 'STUDENT');
+      if (!child) return NextResponse.json({ error: 'Invalid Student ID provided for Parent' }, { status: 400 });
+    }
+
+    if (roleUpper === 'TEACHER') {
+      if (!assignedClassId) return NextResponse.json({ error: 'Assigned Class ID is required for Teachers' }, { status: 400 });
+      const classes = await readData<any>('classes.txt');
+      const classExists = classes.find(c => c.id === parseInt(assignedClassId, 10));
+      if (!classExists) return NextResponse.json({ error: 'Invalid Class ID provided for Teacher' }, { status: 400 });
     }
 
     const newId = await generateId('users.txt');
@@ -130,7 +144,8 @@ export async function PUT(request: Request) {
     }
 
     // Server-side validation
-    if (role.toUpperCase() === 'STUDENT') {
+    const roleUpper = role.toUpperCase();
+    if (roleUpper === 'STUDENT') {
       const contactPattern = /^[0-9]{11}$/;
       if (contactNumber && !contactPattern.test(contactNumber)) {
         return NextResponse.json({ error: 'Student contact number must be 11 digits' }, { status: 400 });
@@ -138,6 +153,19 @@ export async function PUT(request: Request) {
       if (parentContactNumber && !contactPattern.test(parentContactNumber)) {
         return NextResponse.json({ error: 'Parent contact number must be 11 digits' }, { status: 400 });
       }
+    }
+
+    if (roleUpper === 'PARENT') {
+      if (!childId) return NextResponse.json({ error: 'Child Student ID is required for Parents' }, { status: 400 });
+      const child = users.find(u => u.id === parseInt(childId, 10) && u.role === 'STUDENT');
+      if (!child) return NextResponse.json({ error: 'Invalid Student ID provided for Parent' }, { status: 400 });
+    }
+
+    if (roleUpper === 'TEACHER') {
+      if (!assignedClassId) return NextResponse.json({ error: 'Assigned Class ID is required for Teachers' }, { status: 400 });
+      const classes = await readData<any>('classes.txt');
+      const classExists = classes.find(c => c.id === parseInt(assignedClassId, 10));
+      if (!classExists) return NextResponse.json({ error: 'Invalid Class ID provided for Teacher' }, { status: 400 });
     }
 
     const updatedUser = {

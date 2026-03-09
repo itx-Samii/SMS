@@ -167,6 +167,17 @@ export default function AdminDashboard() {
 
   const handleSaveUser = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    // Role-specific validation
+    if (userForm.role === "PARENT" && !userForm.childId) {
+      alert("Please provide the Child's Student ID.");
+      return;
+    }
+    if (userForm.role === "TEACHER" && !userForm.assignedClassId) {
+      alert("Please provide the Assigned Class ID.");
+      return;
+    }
+
     try {
       const isEdit = editingUserId !== null;
       const bodyData = isEdit ? { ...userForm, id: editingUserId } : userForm;
@@ -182,7 +193,8 @@ export default function AdminDashboard() {
         setUserForm({ name: "", password: "", role: "TEACHER", assignedClassId: "", childId: "" });
         fetchData();
       } else {
-        alert(`Failed to ${isEdit ? "update" : "create"} user.`);
+        const data = await res.json();
+        alert(data.error || `Failed to ${isEdit ? "update" : "create"} user.`);
       }
     } catch (error) {
       console.error(error);
@@ -478,13 +490,13 @@ export default function AdminDashboard() {
                 <h2 style={{ marginBottom: "1.5rem", fontSize: "1.25rem" }}>{editingUserId ? "Edit User Record" : "Create New User"}</h2>
                 <form onSubmit={handleSaveUser} style={{ display: "flex", flexDirection: "column", gap: "1rem" }}>
                   
-                  <div>
-                    <label style={{ display: "block", marginBottom: "0.5rem", fontSize: "0.85rem", color: "var(--text-muted)" }}>User Role</label>
-                    <select value={userForm.role} onChange={e => setUserForm({...userForm, role: e.target.value})}>
-                      <option value="TEACHER">Teacher</option>
-                      <option value="PARENT">Parent</option>
-                      <option value="ADMIN">Admin</option>
-                    </select>
+                  <div style={{ padding: "0.75rem", backgroundColor: "rgba(255,255,255,0.03)", borderRadius: "8px", border: "1px solid var(--border)", marginBottom: "0.5rem" }}>
+                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                       <span style={{ fontSize: "0.85rem", color: "var(--text-muted)" }}>Role Management</span>
+                       <span className={`badge ${userForm.role === 'ADMIN' ? 'badge-blue' : userForm.role === 'TEACHER' ? 'badge-purple' : 'badge-warning'}`}>
+                         {userForm.role} Locked
+                       </span>
+                    </div>
                   </div>
 
                   <div>
