@@ -345,6 +345,20 @@ export default function AdminDashboard() {
     }
   };
 
+  const handleDeleteClass = async (id: number) => {
+    if (!confirm(`Permanently delete Class #${id}? This will NOT delete students, but they will be unassigned.`)) return;
+    try {
+      const res = await fetch(`/api/admin/classes?id=${id}`, { method: "DELETE" });
+      if (res.ok) {
+        fetchData();
+      } else {
+        alert("Failed to delete class.");
+      }
+    } catch (error) {
+      console.error(error);
+    }
+  };
+
   const handleSaveClass = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
@@ -1133,11 +1147,13 @@ export default function AdminDashboard() {
                                      <h3 style={{ fontSize: "1.1rem", color: "var(--text-main)" }}>Detailed Student Roster ({c.name})</h3>
                                      <button className="btn-secondary" style={{ padding: "0.4rem 1rem", fontSize: "0.85rem" }} onClick={() => {
                                         setEditingUserId(null);
+                                        setFormErrors({});
+                                        setIsCustomSection(false);
                                         setStudentForm({ 
-                                          name: "", password: "", classId: c.id.toString(), section: "", rollNumber: "",
+                                          name: "", password: "", classId: c.id.toString(), section: "Sec-A", rollNumber: "",
                                           fatherName: "", motherName: "", gender: "Male", dob: "", 
                                           contactNumber: "", parentContactNumber: "", address: "", 
-                                          admissionDate: "", feeStatus: "Paid"
+                                          admissionDate: "", feeStatus: "Paid", category: "Normal"
                                         });
                                         setShowStudentModal(true);
                                      }}>+ Enroll Student Here</button>
