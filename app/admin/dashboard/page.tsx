@@ -27,6 +27,7 @@ interface User {
   admissionDate?: string;
   feeStatus?: string;
   category?: string;
+  scholarshipGrade?: string; // New field
   subject?: string;
   child?: { name: string; rollNumber: string };
 }
@@ -57,7 +58,7 @@ export default function AdminDashboard() {
     name: "", password: "", classId: "", section: "Sec-A", rollNumber: "",
     fatherName: "", motherName: "", gender: "Male", dob: "", 
     contactNumber: "", parentContactNumber: "", address: "", 
-    admissionDate: "", feeStatus: "Paid", category: "Normal"
+    admissionDate: "", feeStatus: "Paid", category: "Normal", scholarshipGrade: "A"
   });
   
   const [classForm, setClassForm] = useState({ name: "", teacherId: "" });
@@ -253,7 +254,7 @@ export default function AdminDashboard() {
           name: "", password: "", classId: "", section: "Sec-A", rollNumber: "",
           fatherName: "", motherName: "", gender: "Male", dob: "", 
           contactNumber: "", parentContactNumber: "", address: "", 
-          admissionDate: "", feeStatus: "Paid", category: "Normal"
+          admissionDate: "", feeStatus: "Paid", category: "Normal", scholarshipGrade: "A"
         });
         fetchData();
       } else {
@@ -338,7 +339,8 @@ export default function AdminDashboard() {
       address: u.address || "",
       admissionDate: u.admissionDate || "",
       feeStatus: u.feeStatus || "Paid",
-      category: u.category || "Normal"
+      category: u.category || "Normal",
+      scholarshipGrade: u.scholarshipGrade || "A"
     });
     setShowStudentModal(true);
   };
@@ -662,6 +664,15 @@ export default function AdminDashboard() {
                           <option>Scholarship</option>
                         </select>
                       </div>
+                      {studentForm.category === 'Scholarship' && (
+                        <div>
+                          <label style={{ display: "block", marginBottom: "0.4rem", fontSize: "0.8rem", color: "var(--text-muted)" }}>Scholarship Grade</label>
+                          <select value={studentForm.scholarshipGrade} onChange={e => setStudentForm({...studentForm, scholarshipGrade: e.target.value})}>
+                            <option value="A">Grade A (90% Off)</option>
+                            <option value="B">Grade B (50% Off)</option>
+                          </select>
+                        </div>
+                      )}
                       <div>
                         <label style={{ display: "block", marginBottom: "0.4rem", fontSize: "0.8rem", color: "var(--text-muted)" }}>{editingUserId ? "Reset Password" : "Login Password"}</label>
                         <input type="password" placeholder="Pass123!" value={studentForm.password} onChange={e => setStudentForm({...studentForm, password: e.target.value})} {...(!editingUserId ? { required: true } : {})} />
@@ -804,7 +815,14 @@ export default function AdminDashboard() {
                         onChange={e => {
                           const val = parseFloat(e.target.value) || 0;
                           const student = students.find(s => s.id.toString() === feeForm.studentId);
-                          const disc = student?.category === 'Army' ? val * 0.5 : parseFloat(feeForm.discount) || 0;
+                          let disc = 0;
+                          if (student?.category === 'Army') {
+                            disc = val * 0.5;
+                          } else if (student?.category === 'Scholarship') {
+                            disc = student.scholarshipGrade === 'A' ? val * 0.9 : val * 0.5;
+                          } else {
+                            disc = parseFloat(feeForm.discount) || 0;
+                          }
                           setFeeForm({...feeForm, originalFee: e.target.value, discount: disc.toString(), finalFee: (val - disc).toString()});
                         }} 
                       />
@@ -1165,7 +1183,7 @@ export default function AdminDashboard() {
                                           name: "", password: "", classId: c.id.toString(), section: "Sec-A", rollNumber: "",
                                           fatherName: "", motherName: "", gender: "Male", dob: "", 
                                           contactNumber: "", parentContactNumber: "", address: "", 
-                                          admissionDate: "", feeStatus: "Paid", category: "Normal"
+                                          admissionDate: "", feeStatus: "Paid", category: "Normal", scholarshipGrade: "A"
                                         });
                                         setShowStudentModal(true);
                                      }}>+ Enroll Student Here</button>

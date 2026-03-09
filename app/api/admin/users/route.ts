@@ -67,7 +67,7 @@ export async function POST(request: Request) {
     const { 
       name, password, role, classId, assignedClassId, childId, subject,
       section, rollNumber, fatherName, motherName, gender, dob,
-      contactNumber, parentContactNumber, address, admissionDate, feeStatus, category
+      contactNumber, parentContactNumber, address, admissionDate, feeStatus, category, scholarshipGrade
     } = body;
 
     const users = await readData<any>('users.txt');
@@ -112,7 +112,7 @@ export async function POST(request: Request) {
       createdAt: new Date().toISOString(),
       ...(role.toUpperCase() === 'STUDENT' && {
         section, rollNumber, fatherName, motherName, gender, dob,
-        contactNumber, parentContactNumber, address, admissionDate, feeStatus
+        contactNumber, parentContactNumber, address, admissionDate, feeStatus, scholarshipGrade
       })
     };
 
@@ -132,7 +132,7 @@ export async function PUT(request: Request) {
     const { 
       id, name, password, role, classId, assignedClassId, childId, subject,
       section, rollNumber, fatherName, motherName, gender, dob,
-      contactNumber, parentContactNumber, address, admissionDate, feeStatus, category 
+      contactNumber, parentContactNumber, address, admissionDate, feeStatus, category, scholarshipGrade 
     } = body;
 
     let users = await readData<any>('users.txt');
@@ -179,7 +179,7 @@ export async function PUT(request: Request) {
       category: category || users[userIndex].category || "Normal",
       ...(role.toUpperCase() === 'STUDENT' && {
         section, rollNumber, fatherName, motherName, gender, dob,
-        contactNumber, parentContactNumber, address, admissionDate, feeStatus
+        contactNumber, parentContactNumber, address, admissionDate, feeStatus, scholarshipGrade
       })
     };
 

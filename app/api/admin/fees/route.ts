@@ -79,8 +79,25 @@ export async function POST(request: Request) {
       for (const student of students) {
         if (!newRecords.some((f: any) => f.studentId === student.id && f.month === month && f.year?.toString() === year?.toString())) {
           const isArmy = student.category === 'Army';
+          const isScholarship = student.category === 'Scholarship';
           const oFee = parseFloat(originalFee);
-          const disc = isArmy ? oFee * 0.5 : 0;
+          
+          let disc = 0;
+          let remarks = '';
+          
+          if (isArmy) {
+            disc = oFee * 0.5;
+            remarks = '50% Army Discount Applied';
+          } else if (isScholarship) {
+            if (student.scholarshipGrade === 'A') {
+              disc = oFee * 0.9;
+              remarks = '90% Scholarship Grade A Applied';
+            } else {
+              disc = oFee * 0.5;
+              remarks = '50% Scholarship Grade B Applied';
+            }
+          }
+
           const fFee = oFee - disc;
 
           newRecords.push({
@@ -96,7 +113,7 @@ export async function POST(request: Request) {
             paidFee: 0,
             remainingFee: fFee,
             status: 'Unpaid',
-            remarks: isArmy ? '50% Army Discount Applied' : ''
+            remarks: remarks
           });
         }
       }
