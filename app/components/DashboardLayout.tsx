@@ -1,7 +1,8 @@
 "use client";
 
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { LogOut, Bell, MessageSquare, Menu, User, GraduationCap } from "lucide-react";
+import { LogOut, Bell, MessageSquare, Menu, User, GraduationCap, Sun, Moon } from "lucide-react";
 
 export interface MenuItem {
   id: string;
@@ -34,6 +35,21 @@ export default function DashboardLayout({
   const handleLogout = () => {
     localStorage.removeItem("user");
     router.push("/");
+  };
+
+  const [theme, setTheme] = useState("dark");
+
+  useEffect(() => {
+    const savedTheme = localStorage.getItem("theme") || "dark";
+    setTheme(savedTheme);
+    document.documentElement.classList.toggle("light-theme", savedTheme === "light");
+  }, []);
+
+  const toggleTheme = () => {
+    const newTheme = theme === "dark" ? "light" : "dark";
+    setTheme(newTheme);
+    localStorage.setItem("theme", newTheme);
+    document.documentElement.classList.toggle("light-theme", newTheme === "light");
   };
 
   const currentTabLabel = menuItems.find(m => m.id === activeTab)?.label || "Dashboard";
@@ -104,6 +120,9 @@ export default function DashboardLayout({
            </div>
            
            <div className="topbar-actions">
+             <button onClick={toggleTheme} className="btn-ghost" style={{ padding: "0.5rem" }} title="Toggle Theme">
+               {theme === "dark" ? <Sun size={20} /> : <Moon size={20} />}
+             </button>
              <button className="btn-ghost" style={{ position: "relative", padding: "0.5rem" }}>
                <MessageSquare size={20} />
              </button>

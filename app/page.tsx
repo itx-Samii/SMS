@@ -138,7 +138,16 @@ export default function Home() {
             <div className="animate-fade-in" style={{ animationDelay: "0.3s" }}>
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "0.5rem" }}>
                  <label style={{ fontSize: "0.85rem", fontWeight: 600, color: "var(--text-muted)", textTransform: "uppercase", letterSpacing: "0.05em" }}>Password</label>
-                 <a href="#" style={{ fontSize: "0.85rem", color: "var(--primary)", textDecoration: "none" }}>Forgot?</a>
+                 <a 
+                   href="#" 
+                   onClick={(e) => {
+                     e.preventDefault();
+                     alert("Please contact school administration to reset your password.");
+                   }}
+                   style={{ fontSize: "0.85rem", color: "var(--primary)", textDecoration: "none" }}
+                 >
+                   Forgot?
+                 </a>
               </div>
               <input 
                 type="password" 

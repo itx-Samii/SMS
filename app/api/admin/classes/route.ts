@@ -34,6 +34,12 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Class name is required' }, { status: 400 });
     }
 
+    // Ensure class name doesn't contain negative numbers
+    const numericMatch = name.match(/-?\d+/);
+    if (numericMatch && parseInt(numericMatch[0]) < 0) {
+      return NextResponse.json({ error: 'Class level/number must be positive' }, { status: 400 });
+    }
+
     const classes = await readData<any>('classes.txt');
     const newId = await generateId('classes.txt');
 

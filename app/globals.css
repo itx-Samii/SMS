@@ -30,6 +30,33 @@
   --glass-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.2);
 }
 
+/* Light Theme Overrides */
+.light-theme {
+  --bg-dark: #f1f5f9;
+  --surface: #ffffff;
+  --surface-hover: #f8fafc;
+  --text-main: #0f172a;
+  --text-muted: #64748b;
+  --border: rgba(0, 0, 0, 0.08);
+  --glass-bg: rgba(255, 255, 255, 0.8);
+  --glass-border: rgba(0, 0, 0, 0.05);
+}
+
+.light-theme input, 
+.light-theme select, 
+.light-theme textarea {
+  background-color: #ffffff;
+  color: #0f172a;
+}
+
+.light-theme .sidebar {
+  background-color: #ffffff;
+}
+
+.light-theme tr:hover td {
+  background-color: rgba(0,0,0,0.02);
+}
+
 * {
   box-sizing: border-box;
   padding: 0;

@@ -71,6 +71,18 @@ export async function POST(request: Request) {
     } = body;
 
     const users = await readData<any>('users.txt');
+    
+    // Server-side validation
+    if (role.toUpperCase() === 'STUDENT') {
+      const contactPattern = /^[0-9]{11}$/;
+      if (contactNumber && !contactPattern.test(contactNumber)) {
+        return NextResponse.json({ error: 'Student contact number must be 11 digits' }, { status: 400 });
+      }
+      if (parentContactNumber && !contactPattern.test(parentContactNumber)) {
+        return NextResponse.json({ error: 'Parent contact number must be 11 digits' }, { status: 400 });
+      }
+    }
+
     const newId = await generateId('users.txt');
 
     const newUser: any = {
@@ -114,6 +126,17 @@ export async function PUT(request: Request) {
 
     if (userIndex === -1) {
       return NextResponse.json({ error: 'User not found' }, { status: 404 });
+    }
+
+    // Server-side validation
+    if (role.toUpperCase() === 'STUDENT') {
+      const contactPattern = /^[0-9]{11}$/;
+      if (contactNumber && !contactPattern.test(contactNumber)) {
+        return NextResponse.json({ error: 'Student contact number must be 11 digits' }, { status: 400 });
+      }
+      if (parentContactNumber && !contactPattern.test(parentContactNumber)) {
+        return NextResponse.json({ error: 'Parent contact number must be 11 digits' }, { status: 400 });
+      }
     }
 
     const updatedUser = {

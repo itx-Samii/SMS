@@ -464,11 +464,23 @@ export default function AdminDashboard() {
                     <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "0.5rem" }}>
                       <div>
                         <label style={{ display: "block", marginBottom: "0.4rem", fontSize: "0.8rem", color: "var(--text-muted)" }}>Student Contact</label>
-                        <input placeholder="Phone" value={studentForm.contactNumber} onChange={e => setStudentForm({...studentForm, contactNumber: e.target.value})} />
+                        <input 
+                          placeholder="03001234567" 
+                          value={studentForm.contactNumber} 
+                          onChange={e => setStudentForm({...studentForm, contactNumber: e.target.value.replace(/\D/g, '').slice(0, 11)})} 
+                          pattern="[0-9]{11}"
+                          title="Contact number must be exactly 11 digits"
+                        />
                       </div>
                       <div>
                         <label style={{ display: "block", marginBottom: "0.4rem", fontSize: "0.8rem", color: "var(--text-muted)" }}>Parent Contact</label>
-                        <input placeholder="Emergency" value={studentForm.parentContactNumber} onChange={e => setStudentForm({...studentForm, parentContactNumber: e.target.value})} />
+                        <input 
+                          placeholder="03007654321" 
+                          value={studentForm.parentContactNumber} 
+                          onChange={e => setStudentForm({...studentForm, parentContactNumber: e.target.value.replace(/\D/g, '').slice(0, 11)})} 
+                          pattern="[0-9]{11}"
+                          title="Parent contact number must be exactly 11 digits"
+                        />
                       </div>
                     </div>
                     <div>

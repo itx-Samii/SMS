@@ -94,6 +94,19 @@ export async function POST(request: Request) {
     } else {
       // Single record
       const { studentId, classId, sectionId, month, year, totalFee, paidFee, status } = body;
+      
+      // Data Linking Verification
+      const users = await readData<any>('users.txt');
+      const student = users.find((u: any) => u.id === parseInt(studentId) && u.role === 'STUDENT');
+      
+      if (!student) {
+        return NextResponse.json({ error: 'Student not found' }, { status: 404 });
+      }
+      
+      if (student.classId !== parseInt(classId) || student.section !== sectionId) {
+        return NextResponse.json({ error: 'Student does not belong to the specified Class or Section' }, { status: 400 });
+      }
+
       newRecords.push({
         id: nextId++,
         studentId: parseInt(studentId),

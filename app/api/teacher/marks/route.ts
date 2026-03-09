@@ -52,6 +52,18 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
     }
 
+    // Data Linking Verification
+    const users = await readData<any>('users.txt');
+    const student = users.find((u: any) => u.id === parseInt(studentId, 10) && u.role === 'STUDENT');
+    
+    if (!student) {
+      return NextResponse.json({ error: 'Student not found' }, { status: 404 });
+    }
+    
+    if (student.classId !== parseInt(classId, 10) || student.section !== section) {
+      return NextResponse.json({ error: 'Student does not belong to the specified Class or Section' }, { status: 400 });
+    }
+
     // Strict Class Teacher Validation
     const classes = await readData<any>('classes.txt');
     const targetClass = classes.find((c: any) => c.id === parseInt(classId, 10));
