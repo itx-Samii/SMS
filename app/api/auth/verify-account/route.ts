@@ -16,18 +16,28 @@ export async function POST(request: Request) {
     const users = await readData<any>('users.txt');
     const roleUpper = role.toUpperCase();
 
-    // Find user by role and either ID (numeric) or Roll Number (for students)
+    // Find user by role and identifier (ID, Roll Number, or Name)
     const user = users.find((u: any) => {
       const roleMatch = u.role === roleUpper;
-      const contactMatch = u.contactNumber === contactNumber;
+      
+      // Trim and normalize inputs
+      const reqIdentifier = identifier.toString().trim().toLowerCase();
+      const reqContact = contactNumber.toString().trim();
+      
+      const dbContact = (u.contactNumber || "").toString().trim();
+      const contactMatch = dbContact === reqContact;
       
       let identifierMatch = false;
       if (roleUpper === 'STUDENT') {
-        // Students can be found by Roll Number or ID
-        identifierMatch = u.rollNumber === identifier || u.id.toString() === identifier;
+        // Students: check Roll Number or ID
+        const dbRoll = (u.rollNumber || "").toString().trim().toLowerCase();
+        const dbId = u.id.toString();
+        identifierMatch = dbRoll === reqIdentifier || dbId === reqIdentifier;
       } else {
-        // Others by ID
-        identifierMatch = u.id.toString() === identifier;
+        // Others: check ID or Name
+        const dbId = u.id.toString();
+        const dbName = (u.name || "").toString().trim().toLowerCase();
+        identifierMatch = dbId === reqIdentifier || dbName === reqIdentifier;
       }
 
       return roleMatch && identifierMatch && contactMatch;
