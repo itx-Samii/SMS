@@ -3,6 +3,8 @@
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { LogOut, Bell, MessageSquare, Menu, User, GraduationCap, Sun, Moon } from "lucide-react";
+import MessageDropdown from "./MessageDropdown";
+import NotificationDropdown from "./NotificationDropdown";
 
 export interface MenuItem {
   id: string;
@@ -18,11 +20,7 @@ export default function DashboardLayout({
   activeTab,
   setActiveTab,
   children,
-  modals,
-  onMessageClick,
-  onNotificationClick,
-  unreadMessages = 0,
-  unreadNotifications = 0
+  modals
 }: {
   roleTitle: string;
   userName?: string;
@@ -31,10 +29,6 @@ export default function DashboardLayout({
   setActiveTab: (id: string) => void;
   children: React.ReactNode;
   modals?: React.ReactNode;
-  onMessageClick?: () => void;
-  onNotificationClick?: () => void;
-  unreadMessages?: number;
-  unreadNotifications?: number;
 }) {
   const router = useRouter();
 
@@ -57,6 +51,70 @@ export default function DashboardLayout({
     localStorage.setItem("theme", newTheme);
     document.documentElement.classList.toggle("light-theme", newTheme === "light");
   };
+
+  // Dropdown & Notification States
+  const [messages, setMessages] = useState<any[]>([]);
+  const [notifications, setNotifications] = useState<any[]>([]);
+  const [showMessageDropdown, setShowMessageDropdown] = useState(false);
+  const [showNotificationDropdown, setShowNotificationDropdown] = useState(false);
+
+  const fetchMessagesAndNotifications = async () => {
+    try {
+       // Since Layout runs on all dashboards, we fetch globally and the APIs 
+       // filter by 'ALL' or specific roles based on who is logged in (handled by API/URL params in real-world, simplifying here for demo)
+       const userStr = localStorage.getItem("user");
+       const user = userStr ? JSON.parse(userStr) : null;
+       const q = user ? `?receiverRole=${user.role}` : '';
+       
+       const [msgRes, notifRes] = await Promise.all([
+         fetch(`/api/messages${q}`),
+         fetch('/api/notifications')
+       ]);
+       
+       if (msgRes.ok) setMessages(await msgRes.json());
+       if (notifRes.ok) setNotifications(await notifRes.json());
+    } catch (err) {
+       console.error("Failed to fetch notification data");
+    }
+  };
+
+  useEffect(() => {
+    fetchMessagesAndNotifications();
+    // Poll every 30s
+    const interval = setInterval(fetchMessagesAndNotifications, 30000);
+    return () => clearInterval(interval);
+  }, []);
+
+  const markMessageRead = async (id: number) => {
+    try {
+      await fetch("/api/messages", { method: "PATCH", headers: {"Content-Type":"application/json"}, body: JSON.stringify({id, status: 'Read'}) });
+      setMessages(prev => prev.map(m => m.id === id ? { ...m, status: 'Read' } : m));
+    } catch (err) {}
+  };
+
+  const deleteMessage = async (id: number) => {
+    try {
+      await fetch(`/api/messages?id=${id}`, { method: "DELETE" });
+      setMessages(prev => prev.filter(m => m.id !== id));
+    } catch (err) {}
+  };
+
+  const markNotificationRead = async (id: number) => {
+    try {
+      await fetch("/api/notifications", { method: "PATCH", headers: {"Content-Type":"application/json"}, body: JSON.stringify({id, status: 'Read'}) });
+      setNotifications(prev => prev.map(n => n.id === id ? { ...n, status: 'Read' } : n));
+    } catch (err) {}
+  };
+
+  const deleteNotification = async (id: number) => {
+    try {
+      await fetch(`/api/notifications?id=${id}`, { method: "DELETE" });
+      setNotifications(prev => prev.filter(n => n.id !== id));
+    } catch (err) {}
+  };
+
+  const unreadMessagesCount = messages.filter(m => m.status === 'Unread').length;
+  const unreadNotificationsCount = notifications.filter(n => n.status === 'Unread').length;
 
   const currentTabLabel = menuItems.find(m => m.id === activeTab)?.label || "Dashboard";
 
@@ -129,52 +187,62 @@ export default function DashboardLayout({
              <button onClick={toggleTheme} className="btn-ghost" style={{ padding: "0.5rem" }} title="Toggle Theme">
                {theme === "dark" ? <Sun size={20} /> : <Moon size={20} />}
              </button>
-             <button 
-              onClick={onMessageClick}
-              className="btn-ghost" 
-              style={{ position: "relative", padding: "0.5rem" }}
-             >
-               <MessageSquare size={20} />
-               {unreadMessages > 0 && (
-                 <span style={{ 
-                   position: "absolute", 
-                   top: 4, 
-                   right: 4, 
-                   minWidth: "16px", 
-                   height: "16px", 
-                   backgroundColor: "var(--primary)", 
-                   color: "#fff",
-                   borderRadius: "50%",
-                   fontSize: "0.65rem",
-                   display: "flex",
-                   alignItems: "center",
-                   justifyContent: "center",
-                   fontWeight: 700,
-                   border: "2px solid var(--bg-dark)"
-                 }}>
-                   {unreadMessages}
-                 </span>
-               )}
-             </button>
-             <button 
-              onClick={onNotificationClick}
-              className="btn-ghost" 
-              style={{ position: "relative", padding: "0.5rem" }}
-             >
-               <Bell size={20} />
-               {unreadNotifications > 0 && (
-                 <span style={{ 
-                   position: "absolute", 
-                   top: 4, 
-                   right: 4, 
-                   width: "10px", 
-                   height: "10px", 
-                   backgroundColor: "var(--danger)", 
-                   borderRadius: "50%",
-                   border: "2px solid var(--bg-dark)"
-                 }}></span>
-               )}
-             </button>
+             
+             {/* Message Dropdown Trigger */}
+             <div style={{ position: "relative" }}>
+               <button 
+                onClick={() => { setShowMessageDropdown(!showMessageDropdown); setShowNotificationDropdown(false); }}
+                className="btn-ghost" 
+                style={{ position: "relative", padding: "0.5rem" }}
+               >
+                 <MessageSquare size={20} />
+                 {unreadMessagesCount > 0 && (
+                   <span style={{ 
+                     position: "absolute", top: 4, right: 4, minWidth: "16px", height: "16px", 
+                     backgroundColor: "var(--primary)", color: "#fff", borderRadius: "50%",
+                     fontSize: "0.65rem", display: "flex", alignItems: "center", justifyContent: "center",
+                     fontWeight: 700, border: "2px solid var(--bg-dark)"
+                   }}>
+                     {unreadMessagesCount}
+                   </span>
+                 )}
+               </button>
+               <MessageDropdown 
+                 isOpen={showMessageDropdown} 
+                 onClose={() => setShowMessageDropdown(false)}
+                 messages={messages}
+                 onMarkRead={markMessageRead}
+                 onDelete={deleteMessage}
+               />
+             </div>
+
+             {/* Notification Dropdown Trigger */}
+             <div style={{ position: "relative" }}>
+               <button 
+                onClick={() => { setShowNotificationDropdown(!showNotificationDropdown); setShowMessageDropdown(false); }}
+                className="btn-ghost" 
+                style={{ position: "relative", padding: "0.5rem" }}
+               >
+                 <Bell size={20} />
+                 {unreadNotificationsCount > 0 && (
+                   <span style={{ 
+                     position: "absolute", top: 4, right: 4, minWidth: "16px", height: "16px", 
+                     backgroundColor: "var(--danger)", color: "#fff", borderRadius: "50%",
+                     fontSize: "0.65rem", display: "flex", alignItems: "center", justifyContent: "center",
+                     fontWeight: 700, border: "2px solid var(--bg-dark)"
+                   }}>
+                     {unreadNotificationsCount}
+                   </span>
+                 )}
+               </button>
+               <NotificationDropdown 
+                 isOpen={showNotificationDropdown} 
+                 onClose={() => setShowNotificationDropdown(false)}
+                 notifications={notifications}
+                 onMarkRead={markNotificationRead}
+                 onDelete={deleteNotification}
+               />
+             </div>
            </div>
         </header>
         
