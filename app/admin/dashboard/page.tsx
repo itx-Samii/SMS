@@ -7,6 +7,7 @@ import MetricCard from "@/app/components/MetricCard";
 import NoticesView from "@/app/components/NoticesView";
 import { Users, ClipboardList, DollarSign, LayoutDashboard, UserCheck, BookOpen, Clock, Activity, GraduationCap, Shield, Bell, Presentation, Award, ChevronRight, ChevronDown, Printer, MessageSquare } from "lucide-react";
 import MessagesModal from "@/app/components/MessagesModal";
+import ComposeMessageModal from "@/app/components/ComposeMessageModal";
 
 interface User {
   id: number;
@@ -43,6 +44,7 @@ export default function AdminDashboard() {
   // Notification / Message States
   const [messages, setMessages] = useState<any[]>([]);
   const [showMessagesModal, setShowMessagesModal] = useState(false);
+  const [showComposeModal, setShowComposeModal] = useState(false);
   const [messagesModalType, setMessagesModalType] = useState<'notification' | 'message'>('notification');
 
   const unreadMessagesCount = messages.filter(m => m.type === 'message' && !m.isRead).length;
@@ -181,6 +183,27 @@ export default function AdminDashboard() {
       }
     } catch (err) {
       console.error("Failed to mark message as read");
+    }
+  };
+
+  const handleSendMessage = async (messageData: any) => {
+    try {
+      const res = await fetch("/api/messages", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          ...messageData,
+          recipientId: "ALL" // For announcements, though API handles specifically if needed
+        })
+      });
+      if (res.ok) {
+        fetchMessages();
+        return true;
+      }
+      return false;
+    } catch (err) {
+      console.error("Failed to send message");
+      return false;
     }
   };
 
@@ -1603,8 +1626,15 @@ export default function AdminDashboard() {
         onClose={() => setShowMessagesModal(false)}
         messages={messages}
         onMarkRead={markMessageRead}
+        onCompose={() => setShowComposeModal(true)}
         title={messagesModalType === 'notification' ? 'System Notifications' : 'Direct Messages'}
         typeFilter={messagesModalType}
+      />
+      <ComposeMessageModal 
+        isOpen={showComposeModal}
+        onClose={() => setShowComposeModal(false)}
+        onSend={handleSendMessage}
+        sender={{ id: currentUser?.id, name: currentUser?.name, role: currentUser?.role }}
       />
     </DashboardLayout>
   );

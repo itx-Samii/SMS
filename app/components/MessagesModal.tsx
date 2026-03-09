@@ -19,6 +19,7 @@ interface MessagesModalProps {
   onClose: () => void;
   messages: Message[];
   onMarkRead: (id: number) => void;
+  onCompose?: () => void;
   title: string;
   typeFilter: 'notification' | 'message';
 }
@@ -28,6 +29,7 @@ export default function MessagesModal({
   onClose, 
   messages, 
   onMarkRead, 
+  onCompose,
   title,
   typeFilter 
 }: MessagesModalProps) {
@@ -43,7 +45,7 @@ export default function MessagesModal({
         style={{ maxWidth: "500px", maxHeight: "80vh", display: "flex", flexDirection: "column" }}
       >
         <div className="modal-header">
-          <div style={{ display: "flex", alignItems: "center", gap: "0.75rem" }}>
+          <div style={{ display: "flex", alignItems: "center", gap: "0.75rem", flex: 1 }}>
             <div style={{ 
               width: "40px", 
               height: "40px", 
@@ -63,9 +65,21 @@ export default function MessagesModal({
               </p>
             </div>
           </div>
-          <button className="btn-ghost" onClick={onClose} style={{ padding: "0.5rem" }}>
-            <X size={20} />
-          </button>
+          
+          <div style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
+            {onCompose && (
+              <button 
+                className="btn-primary" 
+                onClick={onCompose}
+                style={{ fontSize: "0.75rem", padding: "0.4rem 0.8rem", borderRadius: "8px" }}
+              >
+                + New
+              </button>
+            )}
+            <button className="btn-ghost" onClick={onClose} style={{ padding: "0.5rem" }}>
+              <X size={20} />
+            </button>
+          </div>
         </div>
 
         <div className="modal-body" style={{ overflowY: "auto", padding: "1rem" }}>
