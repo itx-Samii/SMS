@@ -26,6 +26,7 @@ interface User {
   address?: string;
   admissionDate?: string;
   feeStatus?: string;
+  category?: string;
   subject?: string;
   child?: { name: string; rollNumber: string };
 }
@@ -53,10 +54,10 @@ export default function AdminDashboard() {
   
   const [userForm, setUserForm] = useState({ name: "", password: "", role: "TEACHER", assignedClassId: "", childId: "" });
   const [studentForm, setStudentForm] = useState({ 
-    name: "", password: "", classId: "", section: "", rollNumber: "",
+    name: "", password: "", classId: "", section: "Sec-A", rollNumber: "",
     fatherName: "", motherName: "", gender: "Male", dob: "", 
     contactNumber: "", parentContactNumber: "", address: "", 
-    admissionDate: "", feeStatus: "Paid"
+    admissionDate: "", feeStatus: "Paid", category: "Normal"
   });
   
   const [classForm, setClassForm] = useState({ name: "", teacherId: "" });
@@ -66,10 +67,17 @@ export default function AdminDashboard() {
   const [feeFilters, setFeeFilters] = useState({ classId: "", sectionId: "", month: "", year: "2026", status: "", studentSearch: "" });
   const [showFeeModal, setShowFeeModal] = useState(false);
   const [showBulkFeeModal, setShowBulkFeeModal] = useState(false);
-  const [feeForm, setFeeForm] = useState({ studentId: "", classId: "", sectionId: "", month: "", year: "2026", totalFee: "", paidFee: "", status: "Unpaid" });
-  const [bulkFeeForm, setBulkFeeForm] = useState({ classId: "", sectionId: "", month: "", year: "2026", totalFee: "" });
+  const [feeForm, setFeeForm] = useState({ 
+    studentId: "", classId: "", sectionId: "", month: "", year: "2026", 
+    originalFee: "", discount: "0", finalFee: "", paidFee: "", status: "Unpaid", remarks: "" 
+  });
+  const [bulkFeeForm, setBulkFeeForm] = useState({ classId: "", sectionId: "", month: "", year: "2026", originalFee: "" });
   const [editingFeeId, setEditingFeeId] = useState<number | null>(null);
   const [studentSearchTerm, setStudentSearchTerm] = useState(""); // For search in modal
+  const [selectedVoucher, setSelectedVoucher] = useState<any>(null);
+  const [showVoucherPreview, setShowVoucherPreview] = useState(false);
+  const [formErrors, setFormErrors] = useState<Record<string, string>>({});
+  const [isCustomSection, setIsCustomSection] = useState(false);
 
   const menuItems: MenuItem[] = [
     { id: "reports", label: "Dashboard", icon: LayoutDashboard },
@@ -196,6 +204,19 @@ export default function AdminDashboard() {
 
   const handleSaveStudent = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    // Validation
+    const errors: Record<string, string> = {};
+    const contactPattern = /^[0-9]{11}$/;
+    if (!contactPattern.test(studentForm.contactNumber)) {
+      errors.contactNumber = "Contact number must be exactly 11 digits (numeric only)";
+    }
+    if (!contactPattern.test(studentForm.parentContactNumber)) {
+      errors.parentContactNumber = "Parent contact number must be exactly 11 digits (numeric only)";
+    }
+    setFormErrors(errors);
+    if (Object.keys(errors).length > 0) return;
+
     try {
       const isEdit = editingUserId !== null;
       // Force role to STUDENT always
@@ -214,15 +235,18 @@ export default function AdminDashboard() {
       if (res.ok) {
         setShowStudentModal(false);
         setEditingUserId(null);
+        setFormErrors({});
+        setIsCustomSection(false);
         setStudentForm({ 
-          name: "", password: "", classId: "", section: "", rollNumber: "",
+          name: "", password: "", classId: "", section: "Sec-A", rollNumber: "",
           fatherName: "", motherName: "", gender: "Male", dob: "", 
           contactNumber: "", parentContactNumber: "", address: "", 
-          admissionDate: "", feeStatus: "Paid"
+          admissionDate: "", feeStatus: "Paid", category: "Normal"
         });
         fetchData();
       } else {
-        alert(`Failed to ${isEdit ? "update" : "create"} student.`);
+        const data = await res.json();
+        alert(data.error || `Failed to ${isEdit ? "update" : "create"} student.`);
       }
     } catch (error) {
       console.error(error);
@@ -242,13 +266,21 @@ export default function AdminDashboard() {
       if (res.ok) {
         setShowFeeModal(false);
         setEditingFeeId(null);
-        setFeeForm({ studentId: "", classId: "", sectionId: "", month: "", year: "2026", totalFee: "", paidFee: "", status: "Unpaid" });
+        setFeeForm({ 
+          studentId: "", classId: "", sectionId: "", month: "", year: "2026", 
+          originalFee: "", discount: "0", finalFee: "", paidFee: "", status: "Unpaid", remarks: "" 
+        });
         setStudentSearchTerm("");
         fetchData();
       } else {
         alert("Failed to save fee record.");
       }
     } catch (err) { console.error(err); }
+  };
+
+  const handlePrintVoucher = (fee: any) => {
+    setSelectedVoucher(fee);
+    setShowVoucherPreview(true);
   };
 
   const handleGeneratePDF = () => {
@@ -263,20 +295,27 @@ export default function AdminDashboard() {
       sectionId: f.sectionId,
       month: f.month,
       year: f.year || "2026",
-      totalFee: f.totalFee.toString(),
+      originalFee: f.originalFee?.toString() || f.totalFee?.toString() || "",
+      discount: f.discount?.toString() || "0",
+      finalFee: f.finalFee?.toString() || f.totalFee?.toString() || "",
       paidFee: f.paidFee.toString(),
-      status: f.status
+      status: f.status,
+      remarks: f.remarks || ""
     });
     setShowFeeModal(true);
   };
 
   const handleEditStudent = (u: User) => {
     setEditingUserId(u.id);
+    const standardSections = ["Sec-A", "Sec-B", "Sec-C"];
+    const isCustom = u.section && !standardSections.includes(u.section);
+    setIsCustomSection(!!isCustom);
+    setFormErrors({});
     setStudentForm({
       name: u.name || "",
       password: "",
       classId: u.classId?.toString() || "",
-      section: u.section || "",
+      section: u.section || "Sec-A",
       rollNumber: u.rollNumber || "",
       fatherName: u.fatherName || "",
       motherName: u.motherName || "",
@@ -286,7 +325,8 @@ export default function AdminDashboard() {
       parentContactNumber: u.parentContactNumber || "",
       address: u.address || "",
       admissionDate: u.admissionDate || "",
-      feeStatus: u.feeStatus || "Paid"
+      feeStatus: u.feeStatus || "Paid",
+      category: u.category || "Normal"
     });
     setShowStudentModal(true);
   };
@@ -325,19 +365,34 @@ export default function AdminDashboard() {
     }
   };
 
-  const handleDeleteClass = async (id: number) => {
-    if (!confirm(`Are you sure you want to delete this class? This can only be done if there are no students assigned.`)) return;
+  const handleDeleteFee = async (id: number) => {
+    if (!confirm('Delete this fee record?')) return;
     try {
-      const res = await fetch(`/api/admin/classes?id=${id}`, { method: "DELETE" });
-      const data = await res.json();
+      const res = await fetch(`/api/admin/fees?id=${id}`, { method: 'DELETE' });
       if (res.ok) {
         fetchData();
       } else {
-        alert(data.error || "Failed to delete class");
+        alert("Failed to delete fee record.");
       }
-    } catch (error) {
-      console.error(error);
-    }
+    } catch (err) { console.error(err); }
+  };
+
+  const handleSaveBulkFee = async (e: React.FormEvent) => {
+    e.preventDefault();
+    try {
+      const res = await fetch("/api/admin/fees", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ ...bulkFeeForm, mode: 'bulk' })
+      });
+      if (res.ok) {
+        setShowBulkFeeModal(false);
+        setBulkFeeForm({ classId: "", sectionId: "", month: "", year: "2026", originalFee: "" });
+        fetchData();
+      } else {
+        alert("Failed to generate bulk fees.");
+      }
+    } catch (err) { console.error(err); }
   };
 
   if (!currentUser) return null;
@@ -351,6 +406,57 @@ export default function AdminDashboard() {
       setActiveTab={setActiveTab}
       modals={
         <>
+          {/* Bulk Fee Modal */}
+          {showBulkFeeModal && (
+            <div style={{ position: "fixed", top: 0, left: 0, right: 0, bottom: 0, backgroundColor: "rgba(0,0,0,0.7)", backdropFilter: "blur(4px)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 110 }}>
+              <div className="glass-card animate-fade-in" style={{ width: "100%", maxWidth: "450px", backgroundColor: "var(--bg-dark)" }}>
+                <h2 style={{ marginBottom: "1.5rem", fontSize: "1.25rem" }}>Generate Monthly Fees</h2>
+                <form onSubmit={handleSaveBulkFee} style={{ display: "flex", flexDirection: "column", gap: "1rem" }}>
+                  <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "1rem" }}>
+                    <div>
+                      <label style={{ display: "block", marginBottom: "0.5rem", fontSize: "0.85rem", color: "var(--text-muted)" }}>Class</label>
+                      <select required value={bulkFeeForm.classId} onChange={e => setBulkFeeForm({...bulkFeeForm, classId: e.target.value})}>
+                        <option value="">-- Class --</option>
+                        {classesData.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
+                      </select>
+                    </div>
+                    <div>
+                      <label style={{ display: "block", marginBottom: "0.5rem", fontSize: "0.85rem", color: "var(--text-muted)" }}>Section</label>
+                      <select required value={bulkFeeForm.sectionId} onChange={e => setBulkFeeForm({...bulkFeeForm, sectionId: e.target.value})}>
+                        <option value="">-- Section --</option>
+                        <option>Sec-A</option><option>Sec-B</option><option>Sec-C</option>
+                      </select>
+                    </div>
+                  </div>
+                  <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "1rem" }}>
+                    <div>
+                      <label style={{ display: "block", marginBottom: "0.5rem", fontSize: "0.85rem", color: "var(--text-muted)" }}>Month</label>
+                      <select required value={bulkFeeForm.month} onChange={e => setBulkFeeForm({...bulkFeeForm, month: e.target.value})}>
+                        <option value="">-- Month --</option>
+                        {["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"].map(m => (
+                          <option key={m} value={m}>{m}</option>
+                        ))}
+                      </select>
+                    </div>
+                    <div>
+                      <label style={{ display: "block", marginBottom: "0.5rem", fontSize: "0.85rem", color: "var(--text-muted)" }}>Year</label>
+                      <input required type="number" value={bulkFeeForm.year} onChange={e => setBulkFeeForm({...bulkFeeForm, year: e.target.value})} />
+                    </div>
+                  </div>
+                  <div>
+                    <label style={{ display: "block", marginBottom: "0.5rem", fontSize: "0.85rem", color: "var(--text-muted)" }}>Monthly Tuition Fee (Original Rs.)</label>
+                    <input required type="number" placeholder="5000" value={bulkFeeForm.originalFee} onChange={e => setBulkFeeForm({...bulkFeeForm, originalFee: e.target.value})} />
+                    <p style={{ fontSize: "0.75rem", color: "var(--text-muted)", marginTop: "0.4rem" }}>* Army students will automatically get 50% discount.</p>
+                  </div>
+                  <div style={{ display: "flex", gap: "1rem", marginTop: "1rem" }}>
+                    <button type="button" className="btn-ghost" onClick={() => setShowBulkFeeModal(false)} style={{ flex: 1, backgroundColor: "rgba(255,255,255,0.05)" }}>Cancel</button>
+                    <button type="submit" className="btn-primary" style={{ flex: 1 }}>Generate Records</button>
+                  </div>
+                </form>
+              </div>
+            </div>
+          )}
+
           {/* Add/Edit User Modal */}
           {showModal && (
             <div style={{ position: "fixed", top: 0, left: 0, right: 0, bottom: 0, backgroundColor: "rgba(0,0,0,0.7)", backdropFilter: "blur(4px)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 100 }}>
@@ -442,7 +548,33 @@ export default function AdminDashboard() {
                       </div>
                       <div>
                         <label style={{ display: "block", marginBottom: "0.4rem", fontSize: "0.8rem", color: "var(--text-muted)" }}>Section / Room</label>
-                        <input placeholder="e.g. Sec-B" value={studentForm.section} onChange={e => setStudentForm({...studentForm, section: e.target.value})} />
+                        <select 
+                          value={isCustomSection ? "custom" : studentForm.section}
+                          onChange={e => {
+                            if (e.target.value === "custom") {
+                              setIsCustomSection(true);
+                              setStudentForm({...studentForm, section: ""});
+                            } else {
+                              setIsCustomSection(false);
+                              setStudentForm({...studentForm, section: e.target.value});
+                            }
+                          }}
+                        >
+                          <option value="Sec-A">Sec-A</option>
+                          <option value="Sec-B">Sec-B</option>
+                          <option value="Sec-C">Sec-C</option>
+                          <option value="custom">Add More Option...</option>
+                        </select>
+                        {isCustomSection && (
+                          <input 
+                            required
+                            placeholder="Type custom section" 
+                            value={studentForm.section} 
+                            onChange={e => setStudentForm({...studentForm, section: e.target.value})} 
+                            style={{ marginTop: "0.5rem" }}
+                            autoFocus
+                          />
+                        )}
                       </div>
                     </div>
                     <div>
@@ -468,9 +600,9 @@ export default function AdminDashboard() {
                           placeholder="03001234567" 
                           value={studentForm.contactNumber} 
                           onChange={e => setStudentForm({...studentForm, contactNumber: e.target.value.replace(/\D/g, '').slice(0, 11)})} 
-                          pattern="[0-9]{11}"
-                          title="Contact number must be exactly 11 digits"
+                          style={{ borderColor: formErrors.contactNumber ? "var(--danger)" : "" }}
                         />
+                        {formErrors.contactNumber && <p style={{ color: "var(--danger)", fontSize: "0.7rem", marginTop: "0.2rem" }}>{formErrors.contactNumber}</p>}
                       </div>
                       <div>
                         <label style={{ display: "block", marginBottom: "0.4rem", fontSize: "0.8rem", color: "var(--text-muted)" }}>Parent Contact</label>
@@ -478,9 +610,9 @@ export default function AdminDashboard() {
                           placeholder="03007654321" 
                           value={studentForm.parentContactNumber} 
                           onChange={e => setStudentForm({...studentForm, parentContactNumber: e.target.value.replace(/\D/g, '').slice(0, 11)})} 
-                          pattern="[0-9]{11}"
-                          title="Parent contact number must be exactly 11 digits"
+                          style={{ borderColor: formErrors.parentContactNumber ? "var(--danger)" : "" }}
                         />
+                        {formErrors.parentContactNumber && <p style={{ color: "var(--danger)", fontSize: "0.7rem", marginTop: "0.2rem" }}>{formErrors.parentContactNumber}</p>}
                       </div>
                     </div>
                     <div>
@@ -494,6 +626,14 @@ export default function AdminDashboard() {
                           <option>Paid</option>
                           <option>Pending</option>
                           <option>Overdue</option>
+                        </select>
+                      </div>
+                      <div>
+                        <label style={{ display: "block", marginBottom: "0.4rem", fontSize: "0.8rem", color: "var(--text-muted)" }}>Student Category</label>
+                        <select value={studentForm.category} onChange={e => setStudentForm({...studentForm, category: e.target.value})}>
+                          <option>Normal</option>
+                          <option>Army</option>
+                          <option>Scholarship</option>
                         </select>
                       </div>
                       <div>
@@ -617,37 +757,83 @@ export default function AdminDashboard() {
                     <div>
                       <label style={{ display: "block", marginBottom: "0.5rem", fontSize: "0.85rem", color: "var(--text-muted)" }}>Month</label>
                       <select required value={feeForm.month} onChange={e => setFeeForm({...feeForm, month: e.target.value})}>
-                        <option value="">-- Month --</option>
-                        {["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"].map(m => (
-                          <option key={m} value={m}>{m}</option>
-                        ))}
+                        <option value="">Select Month</option>
+                        {["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"].map(m => <option key={m}>{m}</option>)}
                       </select>
                     </div>
                     <div>
                       <label style={{ display: "block", marginBottom: "0.5rem", fontSize: "0.85rem", color: "var(--text-muted)" }}>Year</label>
-                      <select required value={feeForm.year} onChange={e => setFeeForm({...feeForm, year: e.target.value})}>
-                        {[2024, 2025, 2026, 2027].map(y => <option key={y} value={y}>{y}</option>)}
-                      </select>
+                      <input required type="number" value={feeForm.year} onChange={e => setFeeForm({...feeForm, year: e.target.value})} />
                     </div>
                   </div>
 
                   <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "1rem" }}>
                     <div>
-                      <label style={{ display: "block", marginBottom: "0.5rem", fontSize: "0.85rem", color: "var(--text-muted)" }}>Total Fee Amount</label>
-                      <input type="number" required value={feeForm.totalFee} onChange={e => setFeeForm({...feeForm, totalFee: e.target.value})} />
+                      <label style={{ display: "block", marginBottom: "0.5rem", fontSize: "0.85rem", color: "var(--text-muted)" }}>Original Fee (Rs.)</label>
+                      <input 
+                        required 
+                        type="number" 
+                        placeholder="5000" 
+                        value={feeForm.originalFee} 
+                        onChange={e => {
+                          const val = parseFloat(e.target.value) || 0;
+                          const student = students.find(s => s.id.toString() === feeForm.studentId);
+                          const disc = student?.category === 'Army' ? val * 0.5 : parseFloat(feeForm.discount) || 0;
+                          setFeeForm({...feeForm, originalFee: e.target.value, discount: disc.toString(), finalFee: (val - disc).toString()});
+                        }} 
+                      />
                     </div>
                     <div>
-                      <label style={{ display: "block", marginBottom: "0.5rem", fontSize: "0.85rem", color: "var(--text-muted)" }}>Paid Amount</label>
-                      <input type="number" value={feeForm.paidFee} onChange={e => setFeeForm({...feeForm, paidFee: e.target.value})} />
+                      <label style={{ display: "block", marginBottom: "0.5rem", fontSize: "0.85rem", color: "var(--text-muted)" }}>Discount (Rs.)</label>
+                      <input 
+                        required 
+                        type="number" 
+                        value={feeForm.discount} 
+                        onChange={e => {
+                          const disc = parseFloat(e.target.value) || 0;
+                          const original = parseFloat(feeForm.originalFee) || 0;
+                          setFeeForm({...feeForm, discount: e.target.value, finalFee: (original - disc).toString()});
+                        }} 
+                      />
                     </div>
                   </div>
-                  <div>
-                    <label style={{ display: "block", marginBottom: "0.5rem", fontSize: "0.85rem", color: "var(--text-muted)" }}>Status</label>
-                    <select value={feeForm.status} onChange={e => setFeeForm({...feeForm, status: e.target.value})}>
-                      <option>Paid</option>
-                      <option>Unpaid</option>
-                      <option>Partial</option>
-                    </select>
+
+                  <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "1rem" }}>
+                    <div>
+                      <label style={{ display: "block", marginBottom: "0.5rem", fontSize: "0.85rem", color: "var(--text-muted)" }}>Final Fee (Rs.)</label>
+                      <input readOnly type="number" value={feeForm.finalFee} style={{ opacity: 0.7, backgroundColor: "var(--surface)" }} />
+                    </div>
+                    <div>
+                      <label style={{ display: "block", marginBottom: "0.5rem", fontSize: "0.85rem", color: "var(--text-muted)" }}>Paid Amount (Rs.)</label>
+                      <input 
+                        required 
+                        type="number" 
+                        value={feeForm.paidFee} 
+                        onChange={e => {
+                          const paid = parseFloat(e.target.value) || 0;
+                          const final = parseFloat(feeForm.finalFee) || 0;
+                          let status = "Unpaid";
+                          if (paid >= final && final > 0) status = "Paid";
+                          else if (paid > 0) status = "Partial";
+                          setFeeForm({...feeForm, paidFee: e.target.value, status});
+                        }} 
+                      />
+                    </div>
+                  </div>
+
+                  <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "1rem" }}>
+                    <div>
+                      <label style={{ display: "block", marginBottom: "0.5rem", fontSize: "0.85rem", color: "var(--text-muted)" }}>Status</label>
+                      <select value={feeForm.status} onChange={e => setFeeForm({...feeForm, status: e.target.value})}>
+                        <option>Unpaid</option>
+                        <option>Partial</option>
+                        <option>Paid</option>
+                      </select>
+                    </div>
+                    <div>
+                      <label style={{ display: "block", marginBottom: "0.5rem", fontSize: "0.85rem", color: "var(--text-muted)" }}>Remarks</label>
+                      <input placeholder="Optional note" value={feeForm.remarks} onChange={e => setFeeForm({...feeForm, remarks: e.target.value})} />
+                    </div>
                   </div>
                   <div style={{ display: "flex", gap: "1rem", marginTop: "1rem" }}>
                     <button type="button" className="btn-ghost" onClick={() => setShowFeeModal(false)} style={{ flex: 1, backgroundColor: "rgba(255,255,255,0.05)" }}>Cancel</button>
@@ -655,6 +841,91 @@ export default function AdminDashboard() {
                   </div>
                 </form>
               </div>
+            </div>
+          )}
+          {/* Voucher Preview Modal */}
+          {showVoucherPreview && selectedVoucher && (
+            <div style={{ position: "fixed", top: 0, left: 0, right: 0, bottom: 0, backgroundColor: "rgba(0,0,0,0.8)", backdropFilter: "blur(8px)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 200, overflowY: "auto", padding: "2rem" }}>
+              <div style={{ width: "100%", maxWidth: "1000px" }}>
+                <div style={{ marginBottom: "1rem", display: "flex", justifyContent: "space-between" }} className="no-print">
+                  <h2 style={{ color: "white" }}>Fee Voucher Preview</h2>
+                  <div style={{ display: "flex", gap: "1rem" }}>
+                    <button className="btn-primary" onClick={() => window.print()} style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
+                      <Printer size={18} /> Print Now
+                    </button>
+                    <button className="btn-ghost" onClick={() => setShowVoucherPreview(false)} style={{ color: "white" }}>Close Preview</button>
+                  </div>
+                </div>
+
+                <div id="printable-voucher" style={{ backgroundColor: "white", padding: "0.5in", borderRadius: "4px", color: "black", minHeight: "80vh" }}>
+                   <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: "1rem" }}>
+                      {["School Copy", "Student Copy", "Bank Copy"].map((copyType, idx) => (
+                        <div key={idx} style={{ border: "1px dashed #ccc", padding: "1rem", fontSize: "11px", position: "relative" }}>
+                          <div style={{ textAlign: "center", marginBottom: "1rem" }}>
+                            <h3 style={{ margin: 0, fontSize: "14px", fontWeight: "bold" }}>ELITE PUBLIC SCHOOL</h3>
+                            <p style={{ margin: 0, color: "#666" }}>Excellence in Education</p>
+                            <div style={{ marginTop: "0.5rem", border: "1px solid black", display: "inline-block", padding: "2px 8px", fontWeight: "bold" }}>
+                              {copyType}
+                            </div>
+                          </div>
+
+                          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "0.5rem", marginBottom: "1rem" }}>
+                            <div>
+                              <span style={{ color: "#777" }}>Voucher #:</span> 
+                              <div><strong>EPS-{selectedVoucher.id}</strong></div>
+                            </div>
+                            <div style={{ textAlign: "right" }}>
+                              <span style={{ color: "#777" }}>Date:</span>
+                              <div><strong>{new Date().toLocaleDateString()}</strong></div>
+                            </div>
+                          </div>
+
+                          <div style={{ borderTop: "1px solid #eee", paddingTop: "0.5rem", marginBottom: "1rem" }}>
+                            <div style={{ marginBottom: "0.4rem" }}><span style={{ color: "#777" }}>Student:</span> <strong>{selectedVoucher.studentName}</strong></div>
+                            <div style={{ marginBottom: "0.4rem" }}><span style={{ color: "#777" }}>Roll No:</span> <strong>{selectedVoucher.rollNumber}</strong></div>
+                            <div style={{ marginBottom: "0.4rem" }}><span style={{ color: "#777" }}>Father:</span> <strong>{selectedVoucher.fatherName}</strong></div>
+                            <div style={{ marginBottom: "0.4rem" }}><span style={{ color: "#777" }}>Class:</span> <strong>{selectedVoucher.className} ({selectedVoucher.sectionId})</strong></div>
+                            <div style={{ marginBottom: "0.4rem" }}><span style={{ color: "#777" }}>Category:</span> <strong>{selectedVoucher.category || 'Normal'}</strong></div>
+                          </div>
+
+                          <div style={{ borderTop: "2px solid #333", borderBottom: "2px solid #333", padding: "0.5rem 0", marginBottom: "1rem" }}>
+                            <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "0.3rem" }}>
+                               <span>Tuition Fee ({selectedVoucher.month})</span>
+                               <span>Rs. {selectedVoucher.originalFee}</span>
+                            </div>
+                            <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "0.3rem", color: "#666" }}>
+                               <span>Discount Applied</span>
+                               <span>-Rs. {selectedVoucher.discount || 0}</span>
+                            </div>
+                            <div style={{ display: "flex", justifyContent: "space-between", marginTop: "0.5rem", fontWeight: "bold", borderTop: "1px solid #ccc", paddingTop: "0.5rem" }}>
+                               <span>PAYABLE AMOUNT</span>
+                               <span>Rs. {selectedVoucher.finalFee}</span>
+                            </div>
+                          </div>
+
+                          <p style={{ fontSize: "9px", color: "#888", marginBottom: "1.5rem" }}>
+                            * Please pay by 10th of {selectedVoucher.month}. 
+                            {selectedVoucher.remarks && <><br/>* Note: {selectedVoucher.remarks}</>}
+                          </p>
+
+                          <div style={{ display: "flex", justifyContent: "space-between", marginTop: "2rem" }}>
+                             <div style={{ borderTop: "1px solid #333", width: "80px", textAlign: "center", paddingTop: "4px" }}>Cashier</div>
+                             <div style={{ borderTop: "1px solid #333", width: "80px", textAlign: "center", paddingTop: "4px" }}>Officer</div>
+                          </div>
+                        </div>
+                      ))}
+                   </div>
+                </div>
+              </div>
+
+              <style>{`
+                @media print {
+                  .no-print, .sidebar, .header, .metric-card, .data-table, .tabs { display: none !important; }
+                  body { background: white !important; color: black !important; padding: 0 !important; margin: 0 !important; }
+                  #printable-voucher { display: block !important; padding: 0 !important; width: 100% !important; border: none !important; }
+                  .glass-card { background: transparent !important; border: none !important; box-shadow: none !important; }
+                }
+              `}</style>
             </div>
           )}
 
@@ -1046,10 +1317,11 @@ export default function AdminDashboard() {
                     </div>
                   </div>
                   <div style={{ display: "flex", gap: "0.5rem" }}>
+                    <button className="btn-ghost" onClick={() => setShowBulkFeeModal(true)} style={{ border: "1px solid var(--primary-light)" }}>Bulk Generate</button>
                     <button className="btn-ghost" onClick={handleGeneratePDF} style={{ border: "1px solid var(--primary-light)", display: "flex", alignItems: "center", gap: "0.5rem" }}>
-                      <Printer size={16} /> Generate Record (PDF)
+                      <Printer size={16} /> Print Report
                     </button>
-                    <button className="btn-primary" onClick={() => { setEditingFeeId(null); setFeeForm({ studentId: "", classId: "", sectionId: "", month: "", year: "2026", totalFee: "", paidFee: "", status: "Unpaid" }); setShowFeeModal(true); }}>+ Add Fee</button>
+                    <button className="btn-primary" onClick={() => { setEditingFeeId(null); setFeeForm({ studentId: "", classId: "", sectionId: "", month: "", year: "2026", originalFee: "", discount: "0", finalFee: "", paidFee: "", status: "Unpaid", remarks: "" }); setShowFeeModal(true); }}>+ Add Fee</button>
                   </div>
                 </div>
 
@@ -1069,11 +1341,13 @@ export default function AdminDashboard() {
                       <tr>
                         <th>ID</th>
                         <th>Student Details</th>
-                        <th>Class/Sec</th>
+                        <th>Category</th>
                         <th>Period</th>
-                        <th style={{ textAlign: "right" }}>Total</th>
-                        <th style={{ textAlign: "right" }}>Paid</th>
-                        <th style={{ textAlign: "right" }}>Dues</th>
+                        <th>Original</th>
+                        <th>Discount</th>
+                        <th>Final</th>
+                        <th>Paid</th>
+                        <th>Dues</th>
                         <th>Status</th>
                         <th>Actions</th>
                       </tr>
@@ -1084,35 +1358,39 @@ export default function AdminDashboard() {
                       ) : (
                         fees.map(f => (
                           <tr key={f.id}>
-                            <td style={{ color: "var(--text-muted)", fontSize: "0.85rem" }}>#{f.id}</td>
+                            <td>#{f.id}</td>
                             <td>
-                              <div style={{ fontWeight: 600 }}>{f.studentName}</div>
-                              <div style={{ fontSize: "0.75rem", color: "var(--text-muted)" }}>Roll: {f.rollNumber} | {f.fatherName}</div>
+                              <div>{f.studentName || 'Unknown'}</div>
+                              <div style={{ fontSize: "0.75rem", color: "var(--text-muted)" }}>Roll: {f.rollNumber}</div>
                             </td>
-                            <td>{f.className} ({f.sectionId})</td>
                             <td>
-                              <div style={{ display: "flex", gap: "0.25rem" }}>
-                                <span className="badge badge-purple" style={{ fontSize: "0.7rem", padding: "0.1rem 0.4rem" }}>{f.month}</span>
-                                <span className="badge badge-blue" style={{ fontSize: "0.7rem", padding: "0.1rem 0.4rem" }}>{f.year}</span>
-                              </div>
+                               <span className={`badge ${f.category === 'Army' ? 'badge-primary' : 'badge-ghost'}`}>
+                                 {f.category || 'Normal'}
+                               </span>
                             </td>
-                            <td style={{ textAlign: "right", fontWeight: 600 }}>Rs. {(Number(f.totalFee) || 0).toFixed(2)}</td>
-                            <td style={{ textAlign: "right", color: "var(--success)" }}>Rs. {(Number(f.paidFee) || 0).toFixed(2)}</td>
-                            <td style={{ textAlign: "right", color: "var(--danger)" }}>Rs. {(Number(f.remainingFee) || 0).toFixed(2)}</td>
+                            <td>{f.month} {f.year}</td>
+                            <td>Rs. {f.originalFee || f.totalFee || 0}</td>
+                            <td style={{ color: "var(--danger)" }}>-Rs. {f.discount || 0}</td>
+                            <td><strong>Rs. {f.finalFee || f.totalFee || 0}</strong></td>
+                            <td>Rs. {f.paidFee || 0}</td>
+                            <td style={{ color: (f.finalFee || f.totalFee || 0) - (f.paidFee || 0) > 0 ? "var(--danger)" : "var(--success)" }}>
+                              Rs. {(f.finalFee || f.totalFee || 0) - (f.paidFee || 0)}
+                            </td>
                             <td>
-                              <span className={`badge ${f.status === 'Paid' ? 'badge-success' : f.status === 'Partial' ? 'badge-warning' : 'badge-danger'}`} style={{ fontSize: "0.75rem" }}>
+                              <span className={`badge ${f.status === 'Paid' ? 'badge-success' : f.status === 'Partial' ? 'badge-warning' : 'badge-danger'}`}>
                                 {f.status}
                               </span>
                             </td>
                             <td>
-                              <div style={{ display: "flex", gap: "0.25rem" }}>
-                                <button onClick={() => handleEditFee(f)} className="btn-ghost" style={{ padding: "0.2rem", color: "var(--primary)", fontSize: "0.85rem" }}>Edit</button>
+                              <div style={{ display: "flex", gap: "0.5rem" }}>
+                                <button onClick={() => handleEditFee(f)} className="btn-ghost" style={{ padding: "4px" }} title="Edit"><Activity size={16} /></button>
+                                <button onClick={() => handlePrintVoucher(f)} className="btn-ghost" style={{ padding: "4px" }} title="Print Voucher"><Printer size={16} /></button>
                                 <button onClick={async () => {
                                   if (confirm('Delete this fee record?')) {
                                     await fetch(`/api/admin/fees?id=${f.id}`, { method: 'DELETE' });
                                     fetchData();
                                   }
-                                }} className="btn-ghost" style={{ padding: "0.2rem", color: "var(--danger)", fontSize: "0.85rem" }}>Delete</button>
+                                }} className="btn-ghost" style={{ padding: "4px", color: "var(--danger)" }} title="Delete"><Shield size={16} /></button>
                               </div>
                             </td>
                           </tr>

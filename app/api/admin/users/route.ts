@@ -67,7 +67,7 @@ export async function POST(request: Request) {
     const { 
       name, password, role, classId, assignedClassId, childId, subject,
       section, rollNumber, fatherName, motherName, gender, dob,
-      contactNumber, parentContactNumber, address, admissionDate, feeStatus
+      contactNumber, parentContactNumber, address, admissionDate, feeStatus, category
     } = body;
 
     const users = await readData<any>('users.txt');
@@ -94,6 +94,7 @@ export async function POST(request: Request) {
       assignedClassId: assignedClassId ? parseInt(assignedClassId, 10) : null,
       childId: childId ? parseInt(childId, 10) : null,
       subject: subject || null,
+      category: category || null, // Added category
       createdAt: new Date().toISOString(),
       ...(role.toUpperCase() === 'STUDENT' && {
         section, rollNumber, fatherName, motherName, gender, dob,
@@ -117,7 +118,7 @@ export async function PUT(request: Request) {
     const { 
       id, name, password, role, classId, assignedClassId, childId, subject,
       section, rollNumber, fatherName, motherName, gender, dob,
-      contactNumber, parentContactNumber, address, admissionDate, feeStatus 
+      contactNumber, parentContactNumber, address, admissionDate, feeStatus, category 
     } = body;
 
     let users = await readData<any>('users.txt');
@@ -147,6 +148,7 @@ export async function PUT(request: Request) {
       assignedClassId: assignedClassId ? parseInt(assignedClassId, 10) : null,
       childId: childId ? parseInt(childId, 10) : null,
       subject: subject || null,
+      category: category || users[userIndex].category || "Normal",
       ...(role.toUpperCase() === 'STUDENT' && {
         section, rollNumber, fatherName, motherName, gender, dob,
         contactNumber, parentContactNumber, address, admissionDate, feeStatus

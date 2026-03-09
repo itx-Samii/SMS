@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import { readPipeData, writePipeData, readData } from '@/lib/fileHandler';
 
-const FEE_HEADERS = ['id', 'studentId', 'classId', 'sectionId', 'month', 'year', 'totalFee', 'paidFee', 'remainingFee', 'status'];
+const FEE_HEADERS = ['id', 'studentId', 'classId', 'sectionId', 'month', 'year', 'originalFee', 'discount', 'finalFee', 'paidFee', 'remainingFee', 'status', 'remarks'];
 
 // GET fees with filtering
 export async function GET(request: Request) {
@@ -37,6 +37,7 @@ export async function GET(request: Request) {
         studentName: student?.name || 'Unknown',
         rollNumber: student?.rollNumber || 'N/A',
         fatherName: student?.fatherName || 'Unknown',
+        category: student?.category || 'Normal',
         className: classObj?.name || `Class ${f.classId}`
       };
     });
@@ -67,7 +68,7 @@ export async function POST(request: Request) {
     const newRecords = [...currentFees];
 
     if (mode === 'bulk') {
-      const { classId, sectionId, month, year, totalFee } = body;
+      const { classId, sectionId, month, year, originalFee } = body;
       const users = await readData<any>('users.txt');
       const students = users.filter((u: any) => 
         u.role === 'STUDENT' && 
@@ -77,6 +78,11 @@ export async function POST(request: Request) {
 
       for (const student of students) {
         if (!newRecords.some((f: any) => f.studentId === student.id && f.month === month && f.year?.toString() === year?.toString())) {
+          const isArmy = student.category === 'Army';
+          const oFee = parseFloat(originalFee);
+          const disc = isArmy ? oFee * 0.5 : 0;
+          const fFee = oFee - disc;
+
           newRecords.push({
             id: nextId++,
             studentId: student.id,
@@ -84,18 +90,20 @@ export async function POST(request: Request) {
             sectionId,
             month,
             year: year?.toString(),
-            totalFee: parseFloat(totalFee),
+            originalFee: oFee,
+            discount: disc,
+            finalFee: fFee,
             paidFee: 0,
-            remainingFee: parseFloat(totalFee),
-            status: 'Unpaid'
+            remainingFee: fFee,
+            status: 'Unpaid',
+            remarks: isArmy ? '50% Army Discount Applied' : ''
           });
         }
       }
     } else {
       // Single record
-      const { studentId, classId, sectionId, month, year, totalFee, paidFee, status } = body;
+      const { studentId, classId, sectionId, month, year, originalFee, discount, finalFee, paidFee, status, remarks } = body;
       
-      // Data Linking Verification
       const users = await readData<any>('users.txt');
       const student = users.find((u: any) => u.id === parseInt(studentId) && u.role === 'STUDENT');
       
@@ -107,6 +115,11 @@ export async function POST(request: Request) {
         return NextResponse.json({ error: 'Student does not belong to the specified Class or Section' }, { status: 400 });
       }
 
+      const oFee = parseFloat(originalFee);
+      const disc = parseFloat(discount || 0);
+      const fFee = parseFloat(finalFee || (oFee - disc));
+      const pFee = parseFloat(paidFee || 0);
+
       newRecords.push({
         id: nextId++,
         studentId: parseInt(studentId),
@@ -114,10 +127,13 @@ export async function POST(request: Request) {
         sectionId,
         month,
         year: year?.toString(),
-        totalFee: parseFloat(totalFee),
-        paidFee: parseFloat(paidFee || 0),
-        remainingFee: parseFloat(totalFee) - parseFloat(paidFee || 0),
-        status: status || 'Unpaid'
+        originalFee: oFee,
+        discount: disc,
+        finalFee: fFee,
+        paidFee: pFee,
+        remainingFee: fFee - pFee,
+        status: status || 'Unpaid',
+        remarks: remarks || ''
       });
     }
 
@@ -132,7 +148,7 @@ export async function POST(request: Request) {
 export async function PUT(request: Request) {
   try {
     const body = await request.json();
-    const { id, month, year, paidFee, totalFee, status } = body;
+    const { id, month, year, paidFee, originalFee, discount, finalFee, status, remarks } = body;
 
     const fees = await readPipeData<any>('fees.txt', FEE_HEADERS);
     const idx = fees.findIndex((f: any) => f.id === parseInt(id));
@@ -142,11 +158,14 @@ export async function PUT(request: Request) {
     const updated = { ...fees[idx] };
     if (month) updated.month = month;
     if (year) updated.year = year.toString();
-    if (totalFee !== undefined) updated.totalFee = parseFloat(totalFee);
+    if (originalFee !== undefined) updated.originalFee = parseFloat(originalFee);
+    if (discount !== undefined) updated.discount = parseFloat(discount);
+    if (finalFee !== undefined) updated.finalFee = parseFloat(finalFee);
     if (paidFee !== undefined) updated.paidFee = parseFloat(paidFee);
     
-    updated.remainingFee = updated.totalFee - updated.paidFee;
+    updated.remainingFee = updated.finalFee - updated.paidFee;
     if (status) updated.status = status;
+    if (remarks !== undefined) updated.remarks = remarks;
 
     fees[idx] = updated;
     await writePipeData('fees.txt', fees, FEE_HEADERS);
