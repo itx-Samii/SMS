@@ -18,7 +18,11 @@ export default function DashboardLayout({
   activeTab,
   setActiveTab,
   children,
-  modals
+  modals,
+  onMessageClick,
+  onNotificationClick,
+  unreadMessages = 0,
+  unreadNotifications = 0
 }: {
   roleTitle: string;
   userName?: string;
@@ -29,6 +33,8 @@ export default function DashboardLayout({
   modals?: React.ReactNode;
   onMessageClick?: () => void;
   onNotificationClick?: () => void;
+  unreadMessages?: number;
+  unreadNotifications?: number;
 }) {
   const router = useRouter();
 
@@ -123,12 +129,51 @@ export default function DashboardLayout({
              <button onClick={toggleTheme} className="btn-ghost" style={{ padding: "0.5rem" }} title="Toggle Theme">
                {theme === "dark" ? <Sun size={20} /> : <Moon size={20} />}
              </button>
-             <button className="btn-ghost" style={{ position: "relative", padding: "0.5rem" }}>
+             <button 
+              onClick={onMessageClick}
+              className="btn-ghost" 
+              style={{ position: "relative", padding: "0.5rem" }}
+             >
                <MessageSquare size={20} />
+               {unreadMessages > 0 && (
+                 <span style={{ 
+                   position: "absolute", 
+                   top: 4, 
+                   right: 4, 
+                   minWidth: "16px", 
+                   height: "16px", 
+                   backgroundColor: "var(--primary)", 
+                   color: "#fff",
+                   borderRadius: "50%",
+                   fontSize: "0.65rem",
+                   display: "flex",
+                   alignItems: "center",
+                   justifyContent: "center",
+                   fontWeight: 700,
+                   border: "2px solid var(--bg-dark)"
+                 }}>
+                   {unreadMessages}
+                 </span>
+               )}
              </button>
-             <button className="btn-ghost" style={{ position: "relative", padding: "0.5rem" }}>
+             <button 
+              onClick={onNotificationClick}
+              className="btn-ghost" 
+              style={{ position: "relative", padding: "0.5rem" }}
+             >
                <Bell size={20} />
-               <span style={{ position: "absolute", top: 6, right: 8, width: 8, height: 8, backgroundColor: "var(--danger)", borderRadius: "50%" }}></span>
+               {unreadNotifications > 0 && (
+                 <span style={{ 
+                   position: "absolute", 
+                   top: 4, 
+                   right: 4, 
+                   width: "10px", 
+                   height: "10px", 
+                   backgroundColor: "var(--danger)", 
+                   borderRadius: "50%",
+                   border: "2px solid var(--bg-dark)"
+                 }}></span>
+               )}
              </button>
            </div>
         </header>

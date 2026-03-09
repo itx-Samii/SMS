@@ -5,7 +5,8 @@ import { useRouter } from "next/navigation";
 import DashboardLayout, { MenuItem } from "@/app/components/DashboardLayout";
 import MetricCard from "@/app/components/MetricCard";
 import NoticesView from "@/app/components/NoticesView";
-import { Users, ClipboardList, DollarSign, LayoutDashboard, UserCheck, BookOpen, Clock, Activity, GraduationCap, Shield, Bell, Presentation, Award, ChevronRight, ChevronDown, Printer } from "lucide-react";
+import { Users, ClipboardList, DollarSign, LayoutDashboard, UserCheck, BookOpen, Clock, Activity, GraduationCap, Shield, Bell, Presentation, Award, ChevronRight, ChevronDown, Printer, MessageSquare } from "lucide-react";
+import MessagesModal from "@/app/components/MessagesModal";
 
 interface User {
   id: number;
@@ -38,6 +39,14 @@ interface User {
 export default function AdminDashboard() {
   const router = useRouter();
   const [currentUser, setCurrentUser] = useState<any>(null);
+
+  // Notification / Message States
+  const [messages, setMessages] = useState<any[]>([]);
+  const [showMessagesModal, setShowMessagesModal] = useState(false);
+  const [messagesModalType, setMessagesModalType] = useState<'notification' | 'message'>('notification');
+
+  const unreadMessagesCount = messages.filter(m => m.type === 'message' && !m.isRead).length;
+  const unreadNotificationsCount = messages.filter(m => m.type === 'notification' && !m.isRead).length;
   const [users, setUsers] = useState<User[]>([]); // For teachers, parents, admins
   const [students, setStudents] = useState<User[]>([]); // Specifically for students in a class
   const [expandedClassId, setExpandedClassId] = useState<number | null>(null);
@@ -83,6 +92,7 @@ export default function AdminDashboard() {
   const [showVoucherPreview, setShowVoucherPreview] = useState(false);
   const [formErrors, setFormErrors] = useState<Record<string, string>>({});
   const [isCustomSection, setIsCustomSection] = useState(false);
+
 
   const menuItems: MenuItem[] = [
     { id: "reports", label: "Dashboard", icon: LayoutDashboard },
@@ -150,6 +160,30 @@ export default function AdminDashboard() {
     }
   };
 
+  const fetchMessages = async () => {
+    try {
+      const res = await fetch("/api/messages?role=ADMIN");
+      if (res.ok) setMessages(await res.json());
+    } catch (err) {
+      console.error("Failed to fetch messages");
+    }
+  };
+
+  const markMessageRead = async (id: number) => {
+    try {
+      const res = await fetch("/api/messages", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ messageId: id })
+      });
+      if (res.ok) {
+        setMessages(prev => prev.map(m => m.id === id ? { ...m, isRead: true } : m));
+      }
+    } catch (err) {
+      console.error("Failed to mark message as read");
+    }
+  };
+
   useEffect(() => {
     const userStr = localStorage.getItem("user");
     if (!userStr) {
@@ -158,11 +192,13 @@ export default function AdminDashboard() {
     }
     const user = JSON.parse(userStr);
     if (user.role !== "ADMIN") {
-      router.push("/");
+      router.push(`/${user.role.toLowerCase()}/dashboard`);
       return;
     }
     setCurrentUser(user);
-  }, [router]);
+    fetchData();
+    fetchMessages(); // Initial messages fetch
+  }, [activeTab]);
 
   useEffect(() => {
     if (currentUser) {
@@ -435,11 +471,21 @@ export default function AdminDashboard() {
 
   return (
     <DashboardLayout 
-      roleTitle="SMS Admin" 
-      userName={currentUser.name} 
-      menuItems={menuItems} 
-      activeTab={activeTab} 
+      roleTitle="ADMIN PORTAL" 
+      userName={currentUser?.name}
+      menuItems={menuItems}
+      activeTab={activeTab}
       setActiveTab={setActiveTab}
+      onMessageClick={() => {
+        setMessagesModalType('message');
+        setShowMessagesModal(true);
+      }}
+      onNotificationClick={() => {
+        setMessagesModalType('notification');
+        setShowMessagesModal(true);
+      }}
+      unreadMessages={unreadMessagesCount}
+      unreadNotifications={unreadNotificationsCount}
       modals={
         <>
           {/* Bulk Fee Modal */}
@@ -1552,6 +1598,14 @@ export default function AdminDashboard() {
         }
         .print-header { display: none; }
       `}</style>
+      <MessagesModal 
+        isOpen={showMessagesModal}
+        onClose={() => setShowMessagesModal(false)}
+        messages={messages}
+        onMarkRead={markMessageRead}
+        title={messagesModalType === 'notification' ? 'System Notifications' : 'Direct Messages'}
+        typeFilter={messagesModalType}
+      />
     </DashboardLayout>
   );
 }
