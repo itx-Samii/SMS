@@ -42,6 +42,11 @@ export async function GET() {
       }
     }
 
+    // 3. Verify BCrypt functionality on this environment
+    const testPassword = "test_password_123";
+    const testHash = await bcrypt.hash(testPassword, salt);
+    const testMatch = await bcrypt.compare(testPassword, testHash);
+
     if (fixCount > 0) {
       await writeData('users.txt', users);
       return NextResponse.json({ 
@@ -50,7 +55,8 @@ export async function GET() {
           totalUsers: users.length,
           adminFound: !!admin,
           hashedPasswords: users.filter((u:any) => u.password && u.password.startsWith('$2')).length,
-          plainPasswords: users.filter((u:any) => u.password && !u.password.startsWith('$2')).length
+          plainPasswords: users.filter((u:any) => u.password && !u.password.startsWith('$2')).length,
+          bcryptTest: testMatch ? "Passed" : "Failed"
         },
         systemStatus: "Ready"
       });
@@ -62,7 +68,8 @@ export async function GET() {
         totalUsers: users.length,
         adminFound: !!admin,
         hashedPasswords: users.filter((u:any) => u.password && u.password.startsWith('$2')).length,
-        plainPasswords: users.filter((u:any) => u.password && !u.password.startsWith('$2')).length
+        plainPasswords: users.filter((u:any) => u.password && !u.password.startsWith('$2')).length,
+        bcryptTest: testMatch ? "Passed" : "Failed"
       },
       systemStatus: "Healthy"
     });
