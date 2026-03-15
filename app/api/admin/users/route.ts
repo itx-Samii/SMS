@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { readData, writeData, generateId } from '@/lib/fileHandler';
+import bcrypt from 'bcryptjs';
 
 // DELETE a user
 export async function DELETE(request: Request) {
@@ -98,12 +99,15 @@ export async function POST(request: Request) {
       if (!classExists) return NextResponse.json({ error: 'Invalid Class ID provided for Teacher' }, { status: 400 });
     }
 
+    const salt = await bcrypt.genSalt(10);
+    const hashedPassword = await bcrypt.hash(password || '123', salt);
+
     const newId = await generateId('users.txt');
 
     const newUser: any = {
       id: newId,
       name,
-      password,
+      password: hashedPassword,
       role: role.toUpperCase(),
       classId: classId ? parseInt(classId, 10) : null,
       assignedClassId: assignedClassId ? parseInt(assignedClassId, 10) : null,
@@ -120,6 +124,30 @@ export async function POST(request: Request) {
     };
 
     users.push(newUser);
+
+    // Automatically create a linked parent if student
+    if (roleUpper === 'STUDENT') {
+      const parentId = await generateId('users.txt'); // Note: This is slightly risky if multiple parallel requests happen, but okay for this architecture
+      const parentName = fatherName || `Parent of ${name}`;
+      const parentPassword = await bcrypt.hash('123', salt);
+      
+      const newParent: any = {
+        id: parentId,
+        name: parentName,
+        password: parentPassword,
+        role: 'PARENT',
+        childId: newId,
+        contactNumber: parentContactNumber || null,
+        createdAt: new Date().toISOString()
+      };
+      
+      // Ensure we don't have duplicate IDs if generateId isn't perfectly transactional
+      const parentIdFixed = Math.max(newId, ...users.map((u: any) => u.id)) + 1;
+      newParent.id = parentIdFixed;
+      
+      users.push(newParent);
+    }
+
     await writeData('users.txt', users);
 
     return NextResponse.json(newUser, { status: 201 });
@@ -192,7 +220,8 @@ export async function PUT(request: Request) {
     };
 
     if (password) {
-      updatedUser.password = password;
+      const salt = await bcrypt.genSalt(10);
+      updatedUser.password = await bcrypt.hash(password, salt);
     }
 
     users[userIndex] = updatedUser;

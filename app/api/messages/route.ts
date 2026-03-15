@@ -15,16 +15,41 @@ const readMessages = () => {
     const lines = fileContent.split('\n').filter(line => line.trim() !== '');
     
     return lines.map(line => {
-      // Format: MessageID|SenderID|SenderName|SenderRole|ReceiverRole|MessageText|DateTime|Status
-      const [id, senderId, senderName, senderRole, receiverRole, messageText, dateTime, status] = line.split('|');
+      // Format: MessageID|SenderID|SenderName|SenderRole|ReceiverID|ReceiverRole|Audience|Title|MessageBody|DateTime|Priority|Status
+      const parts = line.split('|');
+      
+      // Handle legacy 9-field format or new 12-field format
+      if (parts.length === 9) {
+        const [id, senderName, senderRole, audience, title, messageText, dateTime, priority, status] = parts;
+        return {
+          id: parseInt(id, 10),
+          senderId: "1", // Default to admin for legacy
+          senderName,
+          senderRole,
+          receiverId: "0",
+          receiverRole: audience === 'ALL' ? 'Everyone' : audience,
+          audience: audience === 'ALL' ? 'Everyone' : audience,
+          title,
+          messageText,
+          dateTime,
+          priority: priority || 'Normal',
+          status
+        };
+      }
+
+      const [id, senderId, senderName, senderRole, receiverId, receiverRole, audience, title, messageText, dateTime, priority, status] = parts;
       return {
         id: parseInt(id, 10),
-        senderId: parseInt(senderId, 10),
+        senderId,
         senderName,
         senderRole,
+        receiverId,
         receiverRole,
+        audience,
+        title,
         messageText,
         dateTime,
+        priority: priority || 'Normal',
         status
       };
     });
@@ -38,7 +63,7 @@ const readMessages = () => {
 const writeMessages = (messages: any[]) => {
   try {
     const lines = messages.map(m => 
-      `${m.id}|${m.senderId}|${m.senderName}|${m.senderRole}|${m.receiverRole}|${m.messageText}|${m.dateTime}|${m.status}`
+      `${m.id}|${m.senderId}|${m.senderName}|${m.senderRole}|${m.receiverId}|${m.receiverRole}|${m.audience}|${m.title}|${m.messageText}|${m.dateTime}|${m.priority}|${m.status}`
     );
     fs.writeFileSync(getFilePath(), lines.join('\n') + '\n', 'utf-8');
     return true;
@@ -51,15 +76,35 @@ const writeMessages = (messages: any[]) => {
 export async function GET(request: Request) {
   try {
     const { searchParams } = new URL(request.url);
-    const receiverRole = searchParams.get('receiverRole');
+    const userId = searchParams.get('userId');
+    const role = searchParams.get('role');
     
     let messages = readMessages();
 
-    // Filter by receiver role (ALL or specific role)
-    if (receiverRole) {
-      messages = messages.filter(m => 
-        m.receiverRole === 'ALL' || m.receiverRole === receiverRole.toUpperCase()
-      );
+    // Strict role-based filtering
+    if (role && userId) {
+      const upperRole = role.toUpperCase();
+      messages = messages.filter(m => {
+        // 1. Message sent to "Everyone"
+        if (m.audience === 'Everyone') return true;
+        
+        // 2. Message sent to specific role
+        if (m.audience === 'Admins' && upperRole === 'ADMIN') return true;
+        if (m.audience === 'Teachers' && upperRole === 'TEACHER') return true;
+        if (m.audience === 'Students' && upperRole === 'STUDENT') return true;
+        if (m.audience === 'Parents' && upperRole === 'PARENT') return true;
+        
+        // 3. Message sent specifically to this user
+        if (m.audience === 'SpecificUser' && m.receiverId === userId.toString()) return true;
+        
+        // 4. Message SENT BY this user (so they can see their own sent messages in inbox/outbox history)
+        if (m.senderId === userId.toString()) return true;
+
+        return false;
+      });
+    } else if (role === 'ADMIN') {
+        // Fallback for admin if only role is provided
+        // (Admin typically sees all or at least all admin targeted + everyone)
     }
 
     // Sort by date descending
@@ -74,9 +119,9 @@ export async function GET(request: Request) {
 export async function POST(request: Request) {
   try {
     const body = await request.json();
-    const { senderId, senderName, senderRole, receiverRole, messageText } = body;
+    const { senderId, senderName, senderRole, receiverId, receiverRole, audience, title, messageText, priority } = body;
 
-    if (!senderId || !senderName || !senderRole || !receiverRole || !messageText) {
+    if (!senderName || !senderRole || !audience || !title || !messageText) {
       return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
     }
 
@@ -87,14 +132,22 @@ export async function POST(request: Request) {
     // Format Date: YYYY-MM-DD HH:MM
     const dateTime = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')} ${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
 
+    // Clean up text replacing newlines with spaces for pipe delimiting, or literal \n
+    const safeMessageText = messageText.replace(/\n/g, '\\n').replace(/\|/g, '');
+    const safeTitle = title.replace(/\|/g, '');
+
     const newMessage = {
       id: newId,
-      senderId,
+      senderId: senderId || "1",
       senderName,
       senderRole,
-      receiverRole,
-      messageText,
+      receiverId: receiverId || "0",
+      receiverRole: receiverRole || audience,
+      audience,
+      title: safeTitle,
+      messageText: safeMessageText,
       dateTime,
+      priority: priority || 'Normal',
       status: 'Unread'
     };
 

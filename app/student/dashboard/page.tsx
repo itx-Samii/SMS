@@ -5,23 +5,31 @@ import { useRouter } from "next/navigation";
 import DashboardLayout, { MenuItem } from "@/app/components/DashboardLayout";
 import MetricCard from "@/app/components/MetricCard";
 import NoticesView from "@/app/components/NoticesView";
-import { LayoutDashboard, CalendarCheck, BookOpen, Award, DollarSign, Settings, Bell, CalendarDays } from "lucide-react";
+import StudentAssignmentsView from "@/app/components/StudentAssignmentsView";
+import { LayoutDashboard, CalendarCheck, BookOpen, Award, DollarSign, Settings, Bell, CalendarDays, Printer, Clock, BarChart3 } from "lucide-react";
+import VoucherPreviewModal from "@/app/components/VoucherPreviewModal";
+import PerformanceAnalytics from "@/app/components/PerformanceAnalytics";
+import MeritList from "@/app/components/MeritList";
 
 export default function StudentDashboard() {
   const router = useRouter();
   const [user, setUser] = useState<any>(null);
   const [data, setData] = useState<any>(null);
   const [timetable, setTimetable] = useState<any[]>([]);
+  const [performanceData, setPerformanceData] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   
   const [activeTab, setActiveTab] = useState("dashboard");
   const [editName, setEditName] = useState("");
   const [editPassword, setEditPassword] = useState("");
   const [profileMsg, setProfileMsg] = useState("");
+  const [showVoucherModal, setShowVoucherModal] = useState(false);
+  const [selectedVoucher, setSelectedVoucher] = useState<any>(null);
 
   const menuItems: MenuItem[] = [
     { id: "dashboard", label: "Dashboard", icon: LayoutDashboard },
-    { id: "timetable", label: "My Timetable", icon: CalendarDays },
+    { id: "performance", label: "My Performance", icon: BarChart3 },
+    { id: "timetable", label: "Weekly Schedule", icon: CalendarDays },
     { id: "attendance", label: "My Attendance", icon: CalendarCheck },
     { id: "assignments", label: "My Assignments", icon: BookOpen, badge: data?.assignments?.length || 0 },
     { id: "results", label: "Exam Results", icon: Award },
@@ -48,19 +56,29 @@ export default function StudentDashboard() {
       try {
         const res = await fetch(`/api/student/records?studentId=${u.id}`);
         if (res.ok) {
-          setData(await res.json());
+          const d = await res.json();
+          setData(d);
+          if (d.student?.classId) fetchTimetable(d.student.classId);
+          fetchPerformance(u.id);
         }
       } catch (err) {
-        console.error("Failed to fetch records");
+        console.error("Failed to fetch dashboard data");
       } finally {
         setLoading(false);
       }
     };
 
-    const fetchTimetable = async () => {
+    const fetchPerformance = async (studentId: any) => {
       try {
-         if (u.classId) {
-           const res = await fetch(`/api/student/timetable?classId=${u.classId}`);
+        const res = await fetch(`/api/analytics/student?studentId=${studentId}`);
+        if (res.ok) setPerformanceData(await res.json());
+      } catch { console.error("Failed to fetch performance data"); }
+    };
+
+    const fetchTimetable = async (classId: string) => {
+      try {
+         if (classId) {
+           const res = await fetch(`/api/student/timetable?classId=${classId}`);
            if (res.ok) setTimetable(await res.json());
          }
       } catch (err) {
@@ -69,7 +87,6 @@ export default function StudentDashboard() {
     };
 
     fetchRecords();
-    fetchTimetable();
   }, [router]);
 
   const handleUpdateProfile = async (e: React.FormEvent) => {
@@ -114,6 +131,17 @@ export default function StudentDashboard() {
       menuItems={menuItems} 
       activeTab={activeTab} 
       setActiveTab={(tab) => { setActiveTab(tab); setProfileMsg(""); }}
+      modals={
+        <VoucherPreviewModal 
+          isOpen={showVoucherModal} 
+          onClose={() => setShowVoucherModal(false)} 
+          voucher={selectedVoucher ? { 
+            ...selectedVoucher, 
+            studentName: user?.name, 
+            className: data?.student?.class || data?.student?.classId 
+          } : null}
+        />
+      }
     >
 
       {loading ? (
@@ -180,31 +208,12 @@ export default function StudentDashboard() {
             </div>
           )}
 
-          {["assignments", "attendance", "fees"].includes(activeTab) && (
+          {["attendance", "fees"].includes(activeTab) && (
              <div className="table-container animate-fade-in">
                <div className="table-header">
                  <span>{menuItems.find(m => m.id === activeTab)?.label}</span>
                </div>
                <table>
-                  {activeTab === "assignments" && (
-                    <>
-                      <thead><tr><th>Title & Description</th><th>Due Date</th></tr></thead>
-                      <tbody>
-                        {data.assignments.length === 0 ? <tr><td colSpan={2} style={{ textAlign: "center", padding: "3rem" }}>No assignments posted.</td></tr> : 
-                          data.assignments.map((a: any) => (
-                            <tr key={a.id}>
-                              <td>
-                                <strong style={{ fontWeight: 600 }}>{a.title}</strong>
-                                <p style={{fontSize: "0.85rem", color: "var(--text-muted)", marginTop: "0.25rem"}}>{a.description}</p>
-                              </td>
-                              <td><span className="badge badge-warning">{a.dueDate}</span></td>
-                            </tr>
-                          ))
-                        }
-                      </tbody>
-                    </>
-                  )}
-
                   {activeTab === "attendance" && (
                     <>
                       <thead><tr><th>Date</th><th>Status</th></tr></thead>
@@ -263,6 +272,13 @@ export default function StudentDashboard() {
                                 {f.status !== 'Paid' && (
                                   <button className="btn-primary" style={{ padding: "0.4rem 0.8rem", fontSize: "0.8rem" }}>Pay Now</button>
                                 )}
+                                <button 
+                                  className="btn-secondary" 
+                                  style={{ padding: "0.4rem 0.8rem", fontSize: "0.8rem", marginLeft: "0.5rem" }}
+                                  onClick={() => { setSelectedVoucher(f); setShowVoucherModal(true); }}
+                                >
+                                  <Printer size={14} style={{ marginRight: "4px" }} /> Voucher
+                                </button>
                               </td>
                             </tr>
                           ))
@@ -274,11 +290,29 @@ export default function StudentDashboard() {
              </div>
           )}
 
+          {activeTab === "assignments" && (
+            <StudentAssignmentsView user={user} />
+          )}
+
           {activeTab === "results" && (
             <div className="animate-fade-in">
               <div style={{ marginBottom: "2.5rem" }}>
                 <h2 style={{ fontSize: "1.5rem", marginBottom: "0.5rem" }}>Academic Performance</h2>
                 <p style={{ color: "var(--text-muted)", fontSize: "0.95rem" }}>Detailed breakdown of your assessments and subject-wise marks.</p>
+              </div>
+
+              <div style={{ marginBottom: "3rem" }}>
+                <h3 style={{ fontSize: "1.2rem", marginBottom: "1.5rem", fontWeight: 600 }}>Class Ranking & Standings</h3>
+                <MeritList 
+                  initialClassId={data?.student?.classId?.toString()} 
+                  classes={[{id: data?.student?.classId, name: data?.student?.class}]}
+                  subjects={Array.from(new Set(data.marks?.map((m: any) => m.subject) || [])).map((s, idx) => ({id: idx, name: s}))}
+                  hideFilters={false}
+                />
+              </div>
+
+              <div style={{ marginBottom: "1.5rem" }}>
+                <h3 style={{ fontSize: "1.2rem", fontWeight: 600 }}>Subject-wise Breakdown</h3>
               </div>
 
               {(!data.marks || data.marks.length === 0) && (!data.results || data.results.length === 0) ? (
@@ -409,36 +443,53 @@ export default function StudentDashboard() {
             </div>
           )}
 
+          {activeTab === "performance" && performanceData && (
+            <PerformanceAnalytics 
+              data={performanceData} 
+              title="Academic Performance Analytics" 
+              subtitle={`Detailed performance breakdown for ${user?.name}`} 
+            />
+          )}
+
           {activeTab === "timetable" && (
             <div className="animate-fade-in">
               <div style={{ marginBottom: "2rem" }}>
                 <h2 style={{ fontSize: "1.5rem", marginBottom: "0.5rem" }}>Weekly Timetable</h2>
                 <p style={{ color: "var(--text-muted)", fontSize: "0.95rem" }}>Class schedule for {data?.student?.class}</p>
               </div>
-              <div style={{ display: "flex", flexDirection: "column", gap: "1rem" }}>
-                {timetable.length === 0 ? (
-                  <div className="glass-card" style={{ padding: "3rem", textAlign: "center", color: "var(--text-muted)" }}>
-                    <CalendarDays size={48} style={{ opacity: 0.2, margin: "0 auto 1rem auto" }} />
-                    <p>No timetable available for your class yet.</p>
-                  </div>
-                ) : (
-                  timetable.map((dayData, idx) => (
-                     <div key={idx} className="glass-card" style={{ padding: 0, overflow: "hidden" }}>
-                       <div style={{ padding: "1rem", backgroundColor: "rgba(255,255,255,0.03)", borderBottom: "1px solid var(--border)", fontWeight: 600, color: "var(--primary)" }}>
-                         {dayData.day}
-                       </div>
-                       <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))", gap: "1px", backgroundColor: "var(--border)" }}>
-                         {dayData.schedule.map((session: any, i: number) => (
-                            <div key={i} style={{ backgroundColor: "var(--bg-dark)", padding: "1.25rem", display: "flex", flexDirection: "column", gap: "0.5rem" }}>
-                               <span style={{ fontSize: "0.8rem", color: "var(--text-muted)" }}>{session.time}</span>
-                               <strong style={{ fontSize: "1.1rem" }}>{session.subject}</strong>
-                               <span style={{ fontSize: "0.9rem", color: "var(--primary)" }}>{session.teacher}</span>
-                            </div>
-                         ))}
-                       </div>
-                     </div>
-                  ))
-                )}
+              <div className="glass-card">
+                <div className="table-container">
+                  <table>
+                    <thead>
+                      <tr>
+                        <th>Day</th>
+                        <th>Subject</th>
+                        <th>Time Slot</th>
+                        <th>Room</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {timetable.length === 0 ? (
+                        <tr><td colSpan={4} style={{ textAlign: "center", padding: "3rem" }}>No schedule found for your class.</td></tr>
+                      ) : (
+                        timetable
+                          .sort((a, b) => {
+                            const days = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
+                            if (a.day !== b.day) return days.indexOf(a.day) - days.indexOf(b.day);
+                            return a.startTime.localeCompare(b.startTime);
+                          })
+                          .map(t => (
+                            <tr key={t.id}>
+                              <td style={{ fontWeight: 600 }}>{t.day}</td>
+                              <td><span className="badge badge-purple">{t.subject}</span></td>
+                              <td>{t.startTime} - {t.endTime}</td>
+                              <td>{t.room}</td>
+                            </tr>
+                          ))
+                      )}
+                    </tbody>
+                  </table>
+                </div>
               </div>
             </div>
           )}

@@ -5,7 +5,10 @@ import { useRouter } from "next/navigation";
 import DashboardLayout, { MenuItem } from "@/app/components/DashboardLayout";
 import MetricCard from "@/app/components/MetricCard";
 import NoticesView from "@/app/components/NoticesView";
-import { Users, ClipboardCheck, Award, BookOpen, MessageSquare, LayoutDashboard, CheckCircle, Bell, Book } from "lucide-react";
+import TeacherAssignmentsView from "@/app/components/TeacherAssignmentsView";
+import { Users, ClipboardCheck, Award, BookOpen, MessageSquare, LayoutDashboard, CheckCircle, Bell, Book, Clock, BarChart3, Trophy } from "lucide-react";
+import ClassPerformanceAnalytics from "@/app/components/ClassPerformanceAnalytics";
+import MeritList from "@/app/components/MeritList";
 
 export default function TeacherDashboard() {
   const router = useRouter();
@@ -41,6 +44,8 @@ export default function TeacherDashboard() {
   const [selectedSubject, setSelectedSubject] = useState("");
 
   const [message, setMessage] = useState("");
+  const [timetable, setTimetable] = useState<any[]>([]);
+  const [classPerformance, setClassPerformance] = useState<any>(null);
 
   // Messaging States
   const [parents, setParents] = useState<any[]>([]);
@@ -51,11 +56,14 @@ export default function TeacherDashboard() {
   const menuItems: MenuItem[] = [
     { id: "dashboard", label: "Dashboard", icon: LayoutDashboard },
     { id: "attendance", label: "Mark Attendance", icon: ClipboardCheck },
+    { id: "performance", label: "Class Performance", icon: BarChart3 },
     { id: "subjects", label: "Manage Subjects", icon: Book },
     { id: "results", label: "Exam Results", icon: Award },
     { id: "assignments", label: "Assignments", icon: BookOpen, badge: assignments.length },
+    { id: "ranking", label: "Class Ranking", icon: Trophy },
     { id: "messages", label: "Messages", icon: MessageSquare, badge: parents.length },
     { id: "notices", label: "Announcements", icon: Bell },
+    { id: "timetable", label: "My Schedule", icon: Clock },
   ];
 
   useEffect(() => {
@@ -99,16 +107,34 @@ export default function TeacherDashboard() {
 
     fetchInitialData();
   }, [router]);
-
   useEffect(() => {
     if (user?.id) {
        fetchAssignments();
        fetchParents();
        fetchMarks();
        fetchAttendanceRecords();
-       if (user.assignedClassId) fetchSubjects();
+       if (user.assignedClassId) {
+         fetchSubjects();
+         fetchClassPerformance(user.assignedClassId);
+       }
+       fetchTimetable();
     }
-  }, [user, historyDate]);
+  }, [user, historyDate, activeTab]);
+
+  const fetchClassPerformance = async (classId: any) => {
+    try {
+      const res = await fetch(`/api/analytics/class?classId=${classId}`);
+      if (res.ok) setClassPerformance(await res.json());
+    } catch { console.error("Failed to fetch class performance"); }
+  };
+
+  const fetchTimetable = async () => {
+    if (!user?.id) return;
+    try {
+      const res = await fetch(`/api/timetable?teacherId=${user.id}`);
+      if (res.ok) setTimetable(await res.json());
+    } catch { console.error("Failed to fetch timetable"); }
+  };
 
   const fetchSubjects = async () => {
     try {
@@ -191,7 +217,7 @@ export default function TeacherDashboard() {
 
   const fetchAssignments = async () => {
     try {
-      const res = await fetch(`/api/teacher/assignments?teacherId=${user?.id}`);
+      const res = await fetch(`/api/assignments?teacherId=${user?.id}`);
       if (res.ok) {
         setAssignments(await res.json());
       }
@@ -472,7 +498,7 @@ export default function TeacherDashboard() {
         </div>
       )}
 
-      {(activeTab === "attendance" || activeTab === "results" || activeTab === "assignments") && (
+      {(activeTab === "attendance" || activeTab === "results") && (
         <div style={{ display: "flex", gap: "2rem", flexWrap: "wrap", alignItems: "flex-start" }} className="animate-fade-in">
           <div style={{ flex: "1 1 100%", display: "flex", flexDirection: "column", gap: "1.5rem" }}>
             {/* Conditional Content based on Active Tab */}
@@ -651,33 +677,7 @@ export default function TeacherDashboard() {
                   <button type="submit" className="btn-primary">Publish Result</button>
                 </form>
               </div>
-            ) : (
-              <div className="glass-card" style={{ maxWidth: "600px" }}>
-                <h3 style={{ marginBottom: "1.5rem", fontSize: "1.25rem" }}>Create New Assignment</h3>
-                <form onSubmit={handleCreateAssignment} style={{ display: "flex", flexDirection: "column", gap: "1.25rem" }}>
-                  <div>
-                    <label style={{ display: "block", marginBottom: "0.5rem", color: "var(--text-muted)", fontSize: "0.9rem" }}>Subject</label>
-                    <select required value={assignmentSubject} onChange={e => setAssignmentSubject(e.target.value)}>
-                      <option value="">-- Choose Subject --</option>
-                      {subjects.map(s => <option key={s.id} value={s.name}>{s.name}</option>)}
-                    </select>
-                  </div>
-                  <div>
-                    <label style={{ display: "block", marginBottom: "0.5rem", color: "var(--text-muted)", fontSize: "0.9rem" }}>Assignment Title</label>
-                    <input required placeholder="e.g. Algebra Basics" value={assignmentTitle} onChange={e => setAssignmentTitle(e.target.value)} />
-                  </div>
-                  <div>
-                    <label style={{ display: "block", marginBottom: "0.5rem", color: "var(--text-muted)", fontSize: "0.9rem" }}>Due Date</label>
-                    <input required type="date" value={assignmentDate} onChange={e => setAssignmentDate(e.target.value)} />
-                  </div>
-                  <div>
-                    <label style={{ display: "block", marginBottom: "0.5rem", color: "var(--text-muted)", fontSize: "0.9rem" }}>Description</label>
-                    <textarea required value={assignmentDesc} onChange={e => setAssignmentDesc(e.target.value)} rows={3} />
-                  </div>
-                  <button type="submit" className="btn-primary">Post Assignment</button>
-                </form>
-              </div>
-            )}
+            ) : null}
           </div>
 
           {activeTab === "results" && (
@@ -726,31 +726,88 @@ export default function TeacherDashboard() {
             </div>
           )}
 
-          {activeTab === "assignments" && (
-            <div className="table-container" style={{ flex: "1 1 400px" }}>
-              <div className="table-header">
-                <span>Active Assignments</span>
-              </div>
-              <table>
-                <thead>
-                  <tr><th>Title</th><th>Due Date</th></tr>
-                </thead>
-                <tbody>
-                  {assignments.length === 0 ? <tr><td colSpan={2} style={{textAlign: "center", padding: "2rem"}}>No assignments posted.</td></tr> :
-                    assignments.map(a => (
-                      <tr key={a.id}>
-                        <td>
-                          <div style={{ fontWeight: 600 }}>{a.title}</div>
-                          <p style={{fontSize: "0.85rem", color: "var(--text-muted)", marginTop: "0.25rem"}}>{a.description}</p>
-                        </td>
-                        <td><span className="badge badge-warning">{a.dueDate}</span></td>
-                      </tr>
-                    ))
-                  }
-                </tbody>
-              </table>
+          {/* End Results Tab Content */}
+        </div>
+      )}
+
+      {activeTab === "assignments" && (
+        <TeacherAssignmentsView user={user} subjects={subjects} />
+      )}
+
+      {activeTab === "ranking" && (
+        <div className="animate-fade-in">
+           <div style={{ marginBottom: "2rem" }}>
+             <h2 style={{ fontSize: "1.5rem", marginBottom: "0.5rem" }}>Class Ranking & Merit List</h2>
+             <p style={{ color: "var(--text-muted)", fontSize: "0.95rem" }}>Academic standings for Class {user?.assignedClassId}</p>
+           </div>
+           <MeritList 
+             initialClassId={user?.assignedClassId?.toString()} 
+             classes={[{id: user?.assignedClassId, name: `Class ${user?.assignedClassId}`}]} 
+             subjects={subjects}
+             hideFilters={false} 
+           />
+        </div>
+      )}
+
+      {activeTab === "performance" && classPerformance && (
+        <ClassPerformanceAnalytics 
+          data={classPerformance} 
+          title="Class Academic Analytics" 
+          subtitle={`Detailed performance metrics for your assigned class`} 
+        />
+      )}
+
+      {activeTab === "timetable" && (
+        <div className="animate-fade-in">
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "1.5rem" }}>
+            <h2 style={{ fontSize: "1.5rem", fontWeight: 600 }}>My Weekly Schedule</h2>
+            <div className="badge badge-blue">Teacher ID: #{user.id}</div>
+          </div>
+          
+          <div className="glass-card">
+            <div className="table-header">
+               <span>Classes Assigned</span>
             </div>
-          )}
+            <div className="table-container">
+               <table>
+                 <thead>
+                   <tr>
+                     <th>Day</th>
+                     <th>Subject</th>
+                     <th>Class & Section</th>
+                     <th>Time</th>
+                     <th>Room</th>
+                   </tr>
+                 </thead>
+                 <tbody>
+                   {timetable.length === 0 ? (
+                     <tr><td colSpan={5} style={{ textAlign: "center", padding: "3rem" }}>No periods scheduled for you yet.</td></tr>
+                   ) : (
+                     timetable
+                      .sort((a, b) => {
+                        const days = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
+                        if (a.day !== b.day) return days.indexOf(a.day) - days.indexOf(b.day);
+                        return a.startTime.localeCompare(b.startTime);
+                      })
+                      .map(t => (
+                       <tr key={t.id}>
+                         <td style={{ fontWeight: 600 }}>{t.day}</td>
+                         <td><span className="badge badge-purple">{t.subject}</span></td>
+                         <td>Class {t.classId} - {t.sectionId}</td>
+                         <td>
+                           <div style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
+                             <Clock size={14} style={{ color: "var(--primary)" }} />
+                             {t.startTime} - {t.endTime}
+                           </div>
+                         </td>
+                         <td>{t.room}</td>
+                       </tr>
+                     ))
+                   )}
+                 </tbody>
+               </table>
+            </div>
+          </div>
         </div>
       )}
 

@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { readData } from '@/lib/fileHandler';
+import bcrypt from 'bcryptjs';
 
 export async function POST(request: Request) {
   try {
@@ -17,11 +18,10 @@ export async function POST(request: Request) {
     const users = await readData<any>('users.txt');
     const user = users.find(u => 
       (u.id === userId || u.name.trim().toLowerCase() === id.trim().toLowerCase()) && 
-      u.password === password && 
       u.role === role.toUpperCase()
     );
 
-    if (!user) {
+    if (!user || !(await bcrypt.compare(password, user.password))) {
       return NextResponse.json({ error: 'Invalid credentials' }, { status: 401 });
     }
 

@@ -9,8 +9,11 @@ interface Message {
   id: number;
   senderName: string;
   senderRole: string;
+  audience: string;
+  title: string;
   messageText: string;
   dateTime: string;
+  priority: string;
   status: string;
 }
 
@@ -21,6 +24,7 @@ export default function MessagesPage() {
   const [statusFilter, setStatusFilter] = useState("ALL");
   const [showCompose, setShowCompose] = useState(false);
   const [currentUser, setCurrentUser] = useState<any>(null);
+  const [replyData, setReplyData] = useState<{audience?: string, detailTarget?: string, type?: 'message'|'notification', title?: string} | undefined>(undefined);
 
   // Fake active tab for layout since this is a dedicated page
   const [activeTab, setActiveTab] = useState("messages");
@@ -37,10 +41,10 @@ export default function MessagesPage() {
     { id: "fees", label: "Fee Management", icon: DollarSign },
   ];
 
-  const fetchMessages = async () => {
+  const fetchMessages = async (user: any) => {
     setLoading(true);
     try {
-      const res = await fetch("/api/messages?receiverRole=ADMIN");
+      const res = await fetch(`/api/messages?role=${user.role}&userId=${user.id}`);
       if (res.ok) {
         setMessages(await res.json());
       }
@@ -53,8 +57,11 @@ export default function MessagesPage() {
 
   useEffect(() => {
     const userStr = localStorage.getItem("user");
-    if (userStr) setCurrentUser(JSON.parse(userStr));
-    fetchMessages();
+    if (userStr) {
+      const user = JSON.parse(userStr);
+      setCurrentUser(user);
+      fetchMessages(user);
+    }
   }, []);
 
   const markRead = async (id: number) => {
@@ -64,7 +71,7 @@ export default function MessagesPage() {
         headers: {"Content-Type":"application/json"}, 
         body: JSON.stringify({id, status: 'Read'}) 
       });
-      fetchMessages();
+      fetchMessages(currentUser);
     } catch (err) {}
   };
 
@@ -72,27 +79,30 @@ export default function MessagesPage() {
     if (!confirm("Are you sure you want to delete this message?")) return;
     try {
       await fetch(`/api/messages?id=${id}`, { method: "DELETE" });
-      fetchMessages();
+      fetchMessages(currentUser);
     } catch (err) {}
   };
 
-  const handleSendMessage = async (messageData: any) => {
+  const handleSendMessage = async (payload: any) => {
     try {
-      const res = await fetch("/api/messages", {
+      const isMessage = payload.type === 'message';
+      const endpoint = isMessage ? "/api/messages" : "/api/notifications";
+      
+      const body = { ...payload };
+      delete body.type; // Remove local 'type' field
+
+      const res = await fetch(endpoint, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          ...messageData,
-          recipientId: "ALL"
-        })
+        body: JSON.stringify(body)
       });
       if (res.ok) {
-        fetchMessages();
+        if (isMessage) fetchMessages(currentUser);
         return true;
       }
       return false;
     } catch (err) {
-      console.error("Failed to send message");
+      console.error("Failed to send message/notification");
       return false;
     }
   };
@@ -121,7 +131,7 @@ export default function MessagesPage() {
             </h1>
             <p style={{ color: "var(--text-muted)", margin: "0.5rem 0 0 0" }}>View, manage, and reply to all system communications</p>
           </div>
-          <button className="btn-primary" onClick={() => setShowCompose(true)} style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
+          <button className="btn-primary" onClick={() => { setReplyData(undefined); setShowCompose(true); }} style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
             <MessageSquare size={18} /> Compose New
           </button>
         </div>
@@ -184,11 +194,15 @@ export default function MessagesPage() {
                     </div>
                     <div>
                        <h3 style={{ margin: 0, fontSize: "1.1rem", display: "flex", alignItems: "center", gap: "0.5rem" }}>
-                         {m.senderName} 
+                         {m.title}
                          {m.status === 'Unread' && <span className="badge badge-blue">New</span>}
+                         {m.priority === 'Urgent' && <span className="badge badge-danger">Urgent</span>}
                        </h3>
-                       <p style={{ margin: "0.25rem 0 0 0", fontSize: "0.85rem", color: "var(--text-muted)" }}>
-                         Role: <span style={{ color: "var(--text-main)" }}>{m.senderRole}</span> • Sent on: {m.dateTime}
+                       <p style={{ margin: "0.25rem 0 0 0", fontSize: "0.9rem", color: "var(--text-main)" }}>
+                         From: {m.senderName} ({m.senderRole})
+                       </p>
+                       <p style={{ margin: "0.15rem 0 0 0", fontSize: "0.80rem", color: "var(--text-muted)" }}>
+                         To: {m.audience} • Sent on: {m.dateTime}
                        </p>
                     </div>
                   </div>
@@ -200,6 +214,18 @@ export default function MessagesPage() {
                      )}
                      <button onClick={() => deleteMessage(m.id)} className="btn-ghost" style={{ display: "flex", alignItems: "center", gap: "0.4rem", color: "var(--danger)", padding: "0.5rem 0.8rem" }}>
                        <Trash2 size={16} /> Delete
+                     </button>
+                     <button onClick={() => {
+                        setReplyData({
+                          type: 'message',
+                          audience: 'USER',
+                          detailTarget: m.senderName,
+                          title: `Re: ${m.title}`
+                        });
+                        setShowCompose(true);
+                     }} className="btn-ghost" style={{ display: "flex", alignItems: "center", gap: "0.4rem", color: "var(--text-main)", padding: "0.5rem 0.8rem" }}>
+                       <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="9 17 4 12 9 7"></polyline><path d="M20 18v-2a4 4 0 0 0-4-4H4"></path></svg>
+                       Reply
                      </button>
                   </div>
                 </div>
@@ -225,6 +251,7 @@ export default function MessagesPage() {
         onClose={() => setShowCompose(false)}
         onSend={handleSendMessage}
         sender={{ id: currentUser?.id, name: currentUser?.name, role: currentUser?.role }}
+        initialData={replyData}
       />
     </DashboardLayout>
   );

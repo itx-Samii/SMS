@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { readData, writeData } from '@/lib/fileHandler';
+import bcrypt from 'bcryptjs';
 
 /**
  * Password Reset API
@@ -21,18 +22,14 @@ export async function POST(request: Request) {
     const targetId = parseInt(userId.toString(), 10);
     const userIndex = users.findIndex((u: any) => u.id === targetId);
 
-    console.log(`Resetting password for User ID: ${targetId} (Original: ${userId})`);
-
     if (userIndex === -1) {
-      console.log(`Reset failed: User with ID ${targetId} not found in users.txt`);
       return NextResponse.json({ error: 'User not found' }, { status: 404 });
     }
 
-    // Update only the password
-    users[userIndex].password = newPassword;
+    const salt = await bcrypt.genSalt(10);
+    users[userIndex].password = await bcrypt.hash(newPassword, salt);
 
     await writeData('users.txt', users);
-    console.log(`Password successfully updated for User: ${users[userIndex].name}`);
 
     return NextResponse.json({ 
       success: true, 

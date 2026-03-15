@@ -5,12 +5,18 @@ import { useRouter } from "next/navigation";
 import DashboardLayout, { MenuItem } from "@/app/components/DashboardLayout";
 import MetricCard from "@/app/components/MetricCard";
 import NoticesView from "@/app/components/NoticesView";
-import { LayoutDashboard, CalendarCheck, Award, DollarSign, MessageSquare, Users, Bell } from "lucide-react";
+import ParentAssignmentsView from "@/app/components/ParentAssignmentsView";
+import { LayoutDashboard, CalendarCheck, Award, DollarSign, MessageSquare, Users, Bell, BookOpen, Printer, CalendarDays, Clock, BarChart3 } from "lucide-react";
+import VoucherPreviewModal from "@/app/components/VoucherPreviewModal";
+import PerformanceAnalytics from "@/app/components/PerformanceAnalytics";
+import MeritList from "@/app/components/MeritList";
 
 export default function ParentDashboard() {
   const router = useRouter();
   const [user, setUser] = useState<any>(null);
   const [data, setData] = useState<any>(null);
+  const [timetable, setTimetable] = useState<any[]>([]);
+  const [performanceData, setPerformanceData] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState("dashboard");
 
@@ -19,12 +25,17 @@ export default function ParentDashboard() {
   const [selectedTeacherId, setSelectedTeacherId] = useState("");
   const [messages, setMessages] = useState<any[]>([]);
   const [newMessage, setNewMessage] = useState("");
+  const [showVoucherModal, setShowVoucherModal] = useState(false);
+  const [selectedVoucher, setSelectedVoucher] = useState<any>(null);
 
   const menuItems: MenuItem[] = [
     { id: "dashboard", label: "Dashboard", icon: LayoutDashboard },
+    { id: "performance", label: "Performance", icon: BarChart3 },
     { id: "attendance", label: "Attendance", icon: CalendarCheck },
     { id: "results", label: "Results", icon: Award },
+    { id: "assignments", label: "Assignments", icon: BookOpen },
     { id: "fees", label: "Fee Status", icon: DollarSign },
+    { id: "timetable", label: "Timetable", icon: CalendarDays },
     { id: "notices", label: "Announcements", icon: Bell },
     { id: "messages", label: "Messaging", icon: MessageSquare, badge: teachers.length },
   ];
@@ -51,16 +62,33 @@ export default function ParentDashboard() {
       try {
         const res = await fetch(`/api/student/records?studentId=${u.childId}`);
         if (res.ok) {
-          setData(await res.json());
+          const d = await res.json();
+          setData(d);
+          if (d.student?.classId) fetchTimetable(d.student.classId);
+          fetchPerformance(u.childId);
         }
-      } catch (err) {
-        console.error("Failed to fetch records");
-      } finally {
-        setLoading(false);
-      }
-    };
+    } catch (err) {
+      console.error("Failed to fetch records");
+    } finally {
+      setLoading(false);
+    }
+  };
 
-    fetchRecords();
+  const fetchPerformance = async (studentId: any) => {
+    try {
+      const res = await fetch(`/api/analytics/student?studentId=${studentId}`);
+      if (res.ok) setPerformanceData(await res.json());
+    } catch { console.error("Failed to fetch performance data"); }
+  };
+
+  const fetchTimetable = async (classId: any) => {
+    try {
+      const res = await fetch(`/api/student/timetable?classId=${classId}`);
+      if (res.ok) setTimetable(await res.json());
+    } catch { console.error("Failed to fetch timetable"); }
+  };
+
+  fetchRecords();
   }, [router]);
 
   useEffect(() => {
@@ -142,6 +170,17 @@ export default function ParentDashboard() {
       menuItems={menuItems} 
       activeTab={activeTab} 
       setActiveTab={(tab) => { setActiveTab(tab); }}
+      modals={
+        <VoucherPreviewModal 
+          isOpen={showVoucherModal} 
+          onClose={() => setShowVoucherModal(false)} 
+          voucher={selectedVoucher ? { 
+            ...selectedVoucher, 
+            studentName: data?.student?.name, 
+            className: data?.student?.class || data?.student?.classId 
+          } : null}
+        />
+      }
     >
 
       {loading ? (
@@ -270,6 +309,13 @@ export default function ParentDashboard() {
                                 {f.status !== 'Paid' && (
                                   <button className="btn-primary" style={{ padding: "0.4rem 0.8rem", fontSize: "0.8rem" }}>Pay Now</button>
                                 )}
+                                <button 
+                                  className="btn-secondary" 
+                                  style={{ padding: "0.4rem 0.8rem", fontSize: "0.8rem", marginLeft: "0.5rem" }}
+                                  onClick={() => { setSelectedVoucher(f); setShowVoucherModal(true); }}
+                                >
+                                  <Printer size={14} style={{ marginRight: "4px" }} /> Voucher
+                                </button>
                               </td>
                             </tr>
                           ))
@@ -281,11 +327,37 @@ export default function ParentDashboard() {
              </div>
           )}
 
+          {activeTab === "assignments" && (
+            <ParentAssignmentsView childId={user.childId} classId={data?.student?.classId} />
+          )}
+
+          {activeTab === "performance" && performanceData && (
+            <PerformanceAnalytics 
+              data={performanceData} 
+              title="Academic Performance Analytics" 
+              subtitle={`Detailed performance breakdown for ${data?.student?.name}`} 
+            />
+          )}
+
           {activeTab === "results" && (
             <div className="animate-fade-in">
               <div style={{ marginBottom: "2.5rem" }}>
                 <h2 style={{ fontSize: "1.5rem", marginBottom: "0.5rem" }}>Child's Academic Performance</h2>
                 <p style={{ color: "var(--text-muted)", fontSize: "0.95rem" }}>Detailed breakdown of assessments and subject-wise marks.</p>
+              </div>
+
+              <div style={{ marginBottom: "3rem" }}>
+                <h3 style={{ fontSize: "1.2rem", marginBottom: "1.5rem", fontWeight: 600 }}>Class Ranking & Standings</h3>
+                <MeritList 
+                  initialClassId={data?.student?.classId?.toString()} 
+                  classes={[{id: data?.student?.classId, name: data?.student?.class}]}
+                  subjects={Array.from(new Set(data.marks?.map((m: any) => m.subject) || [])).map((s, idx) => ({id: idx, name: s}))}
+                  hideFilters={false}
+                />
+              </div>
+
+              <div style={{ marginBottom: "1.5rem" }}>
+                <h3 style={{ fontSize: "1.2rem", fontWeight: 600 }}>Subject-wise Breakdown</h3>
               </div>
 
               {(!data.marks || data.marks.length === 0) && (!data.results || data.results.length === 0) ? (
@@ -472,6 +544,49 @@ export default function ParentDashboard() {
 
           {activeTab === "notices" && (
             <NoticesView role="PARENT" />
+          )}
+
+          {activeTab === "timetable" && (
+            <div className="animate-fade-in">
+              <div style={{ marginBottom: "2rem" }}>
+                <h2 style={{ fontSize: "1.5rem", marginBottom: "0.5rem" }}>Child's Weekly Timetable</h2>
+                <p style={{ color: "var(--text-muted)", fontSize: "0.95rem" }}>Class schedule for {data?.student?.name}</p>
+              </div>
+              <div className="glass-card">
+                <div className="table-container">
+                  <table>
+                    <thead>
+                      <tr>
+                        <th>Day</th>
+                        <th>Subject</th>
+                        <th>Time Slot</th>
+                        <th>Room</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {timetable.length === 0 ? (
+                        <tr><td colSpan={4} style={{ textAlign: "center", padding: "3rem" }}>No timetable available yet.</td></tr>
+                      ) : (
+                        timetable
+                          .sort((a, b) => {
+                            const days = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
+                            if (a.day !== b.day) return days.indexOf(a.day) - days.indexOf(b.day);
+                            return a.startTime.localeCompare(b.startTime);
+                          })
+                          .map(t => (
+                            <tr key={t.id}>
+                              <td style={{ fontWeight: 600 }}>{t.day}</td>
+                              <td><span className="badge badge-blue">{t.subject}</span></td>
+                              <td>{t.startTime} - {t.endTime}</td>
+                              <td>{t.room}</td>
+                            </tr>
+                          ))
+                      )}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </div>
           )}
         </>
       )}

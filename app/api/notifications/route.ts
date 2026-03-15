@@ -15,13 +15,16 @@ const readNotifications = () => {
     const lines = fileContent.split('\n').filter(line => line.trim() !== '');
     
     return lines.map(line => {
-      // Format: NotificationID|Title|Description|DateTime|Status
-      const [id, title, description, dateTime, status] = line.split('|');
+      // Format: NotificationID|SenderName|Audience|Title|Description|DateTime|Priority|Status
+      const [id, senderName, audience, title, description, dateTime, priority, status] = line.split('|');
       return {
         id: parseInt(id, 10),
+        senderName: senderName || 'System',
+        audience: audience || 'ALL',
         title,
         description,
         dateTime,
+        priority: priority || 'Normal',
         status
       };
     });
@@ -35,7 +38,7 @@ const readNotifications = () => {
 const writeNotifications = (notifications: any[]) => {
   try {
     const lines = notifications.map(n => 
-      `${n.id}|${n.title}|${n.description}|${n.dateTime}|${n.status}`
+      `${n.id}|${n.senderName}|${n.audience}|${n.title}|${n.description}|${n.dateTime}|${n.priority}|${n.status}`
     );
     fs.writeFileSync(getFilePath(), lines.join('\n') + '\n', 'utf-8');
     return true;
@@ -61,7 +64,7 @@ export async function GET() {
 export async function POST(request: Request) {
   try {
     const body = await request.json();
-    const { title, description } = body;
+    const { senderName, audience, title, description, priority } = body;
 
     if (!title || !description) {
       return NextResponse.json({ error: 'Title and description are required' }, { status: 400 });
@@ -74,11 +77,18 @@ export async function POST(request: Request) {
     // Format Date: YYYY-MM-DD HH:MM
     const dateTime = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')} ${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
 
+    // Clean up text
+    const safeDesc = description.replace(/\n/g, '\\n').replace(/\|/g, '');
+    const safeTitle = title.replace(/\|/g, '');
+
     const newNotification = {
       id: newId,
-      title,
-      description,
+      senderName: senderName || 'System Admin',
+      audience: audience || 'ALL',
+      title: safeTitle,
+      description: safeDesc,
       dateTime,
+      priority: priority || 'Normal',
       status: 'Unread'
     };
 

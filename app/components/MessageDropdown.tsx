@@ -1,6 +1,6 @@
 "use client";
 
-import { MessageSquare, Check, X, ArrowRight, Trash2 } from "lucide-react";
+import { MessageSquare, Check, X, ArrowRight, Trash2, Reply } from "lucide-react";
 import Link from "next/link";
 import { useEffect, useRef } from "react";
 
@@ -8,8 +8,11 @@ interface Message {
   id: number;
   senderName: string;
   senderRole: string;
+  audience: string;
+  title: string;
   messageText: string;
   dateTime: string;
+  priority: string;
   status: string;
 }
 
@@ -19,9 +22,11 @@ interface MessageDropdownProps {
   messages: Message[];
   onMarkRead: (id: number) => void;
   onDelete: (id: number) => void;
+  onReply: (message: Message) => void;
+  userRole: string;
 }
 
-export default function MessageDropdown({ isOpen, onClose, messages, onMarkRead, onDelete }: MessageDropdownProps) {
+export default function MessageDropdown({ isOpen, onClose, messages, onMarkRead, onDelete, onReply, userRole }: MessageDropdownProps) {
   const dropdownRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -95,19 +100,21 @@ export default function MessageDropdown({ isOpen, onClose, messages, onMarkRead,
               </div>
               <div style={{ flex: 1, minWidth: 0 }}>
                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '0.25rem' }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                       <span style={{ fontWeight: 600, fontSize: '0.9rem', color: m.status === 'Unread' ? 'var(--text-main)' : 'var(--text-muted)' }}>{m.senderName}</span>
-                       <span style={{ fontSize: '0.7rem', padding: '0.1rem 0.4rem', borderRadius: '4px', backgroundColor: 'var(--border)', color: 'var(--text-muted)' }}>{m.senderRole}</span>
+                     <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                       <span style={{ fontWeight: 600, fontSize: '0.9rem', color: m.status === 'Unread' ? 'var(--text-main)' : 'var(--text-muted)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', maxWidth: '140px' }}>
+                         {m.title}
+                       </span>
+                       {m.priority === 'Urgent' && <span style={{ fontSize: '0.65rem', padding: '0.1rem 0.3rem', borderRadius: '4px', backgroundColor: 'rgba(239, 68, 68, 0.1)', color: 'var(--danger)' }}>Urgent</span>}
                     </div>
                     <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)', whiteSpace: 'nowrap' }}>
-                      {m.dateTime.split(' ')[1]} {/* Show only time if today, complex logic omitted for brevity */}
+                      {m.dateTime.split(' ')[1]}
                     </span>
                  </div>
                  <p style={{ 
-                   margin: 0, fontSize: '0.85rem', color: m.status === 'Unread' ? 'rgba(255,255,255,0.9)' : 'var(--text-muted)',
+                   margin: 0, fontSize: '0.80rem', color: m.status === 'Unread' ? 'rgba(255,255,255,0.7)' : 'var(--text-muted)',
                    whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis'
                  }}>
-                   {m.messageText}
+                   <span style={{color: "var(--primary)"}}>{m.senderName}</span>: {m.messageText}
                  </p>
                  
                  {/* Hover actions */}
@@ -120,6 +127,9 @@ export default function MessageDropdown({ isOpen, onClose, messages, onMarkRead,
                     <button onClick={(e) => { e.stopPropagation(); onDelete(m.id); }} className="text-danger hover:text-white" style={{ fontSize: '0.75rem', display: 'flex', alignItems: 'center', gap: '0.2rem', background: 'none', border: 'none', cursor: 'pointer' }}>
                       <Trash2 size={12} /> Delete
                     </button>
+                    <button onClick={(e) => { e.stopPropagation(); onReply(m); }} className="text-secondary hover:text-white" style={{ fontSize: '0.75rem', display: 'flex', alignItems: 'center', gap: '0.2rem', background: 'none', border: 'none', cursor: 'pointer' }}>
+                      <Reply size={12} /> Reply
+                    </button>
                  </div>
               </div>
             </div>
@@ -128,7 +138,7 @@ export default function MessageDropdown({ isOpen, onClose, messages, onMarkRead,
       </div>
 
       <Link 
-        href="/admin/messages" 
+        href={`/${userRole.toLowerCase()}/messages`} 
         onClick={onClose}
         style={{ 
           padding: '0.75rem', 

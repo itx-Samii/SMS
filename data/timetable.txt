@@ -1,21 +1,5 @@
-[
-  {
-    "id": 1,
-    "classId": 1,
-    "day": "Monday",
-    "periods": [
-      {
-        "time": "08:00 - 08:45",
-        "subject": "Mathematics"
-      },
-      {
-        "time": "08:45 - 09:30",
-        "subject": "English"
-      },
-      {
-        "time": "09:45 - 10:30",
-        "subject": "Science"
-      }
-    ]
-  }
-]
+TimetableID|ClassID|SectionID|Day|Subject|TeacherID|StartTime|EndTime|Room|Status
+1|1|Sec-A|Monday|Mathematics|2|08:00|08:45|Room 101|Active
+4|1|Sec-B|Saturday||5|08:00|08:45||Active
+2|1|Sec-A|Monday|English|3|08:45|09:30|Room 101|Active
+3|1|Sec-A|Monday|Science|4|09:45|10:30|Room 101|Active

@@ -2,7 +2,7 @@
   {
     "id": 1,
     "name": "System Admin",
-    "password": "121212",
+    "password": "$2b$10$.dGxXrA50I2M7Lm0RhX22uSpy4/EMv3h4dxn2BiyBodgrOxTUgGca",
     "role": "ADMIN",
     "contactNumber": "03000000000",
     "createdAt": "2024-03-08T00:00:00.000Z"
@@ -10,9 +10,9 @@
   {
     "id": 2,
     "name": "Sarah Jenkins",
-    "password": "123",
+    "password": "$2b$10$MxK0A60U8k8V3YGc2Q53PO04bqa5t3DdOWhCYYvBVuTdw9AK11eAq",
     "role": "TEACHER",
-    "assignedClassId": 3,
+    "assignedClassId": null,
     "createdAt": "2024-03-08T00:00:00.000Z",
     "classId": null,
     "childId": null,
@@ -22,7 +22,7 @@
   {
     "id": 3,
     "name": "Alex Johnson",
-    "password": "123",
+    "password": "$2b$10$B/fG6pBKzWvZm8HmW6RNYeIIqDttAU.AM.zTN0nWm.F3G8.egGbbC",
     "role": "STUDENT",
     "classId": 1,
     "section": "Sec-A",
@@ -45,7 +45,7 @@
   {
     "id": 4,
     "name": "Mark Johnson",
-    "password": "123",
+    "password": "$2b$10$QRDHrTLo.0v6QNnolV1psunM2U.1ve0iqpqekobH.QLArbRyZUwty",
     "role": "PARENT",
     "childId": 3,
     "createdAt": "2024-03-08T00:00:00.000Z"
@@ -53,7 +53,7 @@
   {
     "id": 5,
     "name": "Michael Scott",
-    "password": "123",
+    "password": "$2b$10$pXWA8TTZg3g5MUXDoHIeC.hE4vdliYHyF89miAHM7fkOxh7jWwWrG",
     "role": "TEACHER",
     "assignedClassId": 2,
     "createdAt": "2024-03-08T00:00:00.000Z"
@@ -61,7 +61,7 @@
   {
     "id": 6,
     "name": "Jim Halpert",
-    "password": "123",
+    "password": "$2b$10$0CnxT7EQttftU2kqXMZuduFfwM8HA6blQp2sZOmHw/2oUpF3snwgy",
     "role": "STUDENT",
     "classId": 2,
     "section": "Sec-A",

@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { LogOut, Bell, MessageSquare, Menu, User, GraduationCap, Sun, Moon } from "lucide-react";
 import MessageDropdown from "./MessageDropdown";
 import NotificationDropdown from "./NotificationDropdown";
+import ComposeMessageModal from "./ComposeMessageModal";
 
 export interface MenuItem {
   id: string;
@@ -57,6 +58,16 @@ export default function DashboardLayout({
   const [notifications, setNotifications] = useState<any[]>([]);
   const [showMessageDropdown, setShowMessageDropdown] = useState(false);
   const [showNotificationDropdown, setShowNotificationDropdown] = useState(false);
+  const [showComposeModal, setShowComposeModal] = useState(false);
+  const [replyData, setReplyData] = useState<{audience?: string, detailTarget?: string, type?: 'message'|'notification', title?: string} | undefined>(undefined);
+  const [currentUser, setCurrentUser] = useState<{id: number, name: string, role: string} | null>(null);
+
+  useEffect(() => {
+    const userStr = localStorage.getItem("user");
+    if (userStr) {
+      setCurrentUser(JSON.parse(userStr));
+    }
+  }, []);
 
   const fetchMessagesAndNotifications = async () => {
     try {
@@ -64,7 +75,7 @@ export default function DashboardLayout({
        // filter by 'ALL' or specific roles based on who is logged in (handled by API/URL params in real-world, simplifying here for demo)
        const userStr = localStorage.getItem("user");
        const user = userStr ? JSON.parse(userStr) : null;
-       const q = user ? `?receiverRole=${user.role}` : '';
+       const q = user ? `?role=${user.role}&userId=${user.id}` : '';
        
        const [msgRes, notifRes] = await Promise.all([
          fetch(`/api/messages${q}`),
@@ -99,6 +110,30 @@ export default function DashboardLayout({
     } catch (err) {}
   };
 
+  const handleSendMessage = async (payload: any) => {
+    try {
+      const isMessage = payload.type === 'message';
+      const endpoint = isMessage ? "/api/messages" : "/api/notifications";
+      
+      const body = { ...payload };
+      delete body.type;
+
+      const res = await fetch(endpoint, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(body)
+      });
+      if (res.ok) {
+        if (isMessage) fetchMessagesAndNotifications();
+        return true;
+      }
+      return false;
+    } catch (err) {
+      console.error("Failed to send", payload.type);
+      return false;
+    }
+  };
+
   const markNotificationRead = async (id: number) => {
     try {
       await fetch("/api/notifications", { method: "PATCH", headers: {"Content-Type":"application/json"}, body: JSON.stringify({id, status: 'Read'}) });
@@ -127,7 +162,7 @@ export default function DashboardLayout({
           {roleTitle}
         </h2>
         
-        <nav style={{ flex: 1, display: "flex", flexDirection: "column", gap: "0.25rem", marginTop: "1rem" }}>
+        <nav style={{ flex: 1, display: "flex", flexDirection: "column", gap: "0.25rem", marginTop: "1rem", overflowY: "auto", paddingRight: "4px" }}>
           {menuItems.map(item => {
             const Icon = item.icon;
             return (
@@ -211,8 +246,19 @@ export default function DashboardLayout({
                  isOpen={showMessageDropdown} 
                  onClose={() => setShowMessageDropdown(false)}
                  messages={messages}
-                 onMarkRead={markMessageRead}
+                  onMarkRead={markMessageRead}
+                  userRole={currentUser?.role || ""}
                  onDelete={deleteMessage}
+                 onReply={(m) => {
+                   setReplyData({
+                     type: 'message',
+                     audience: 'USER',
+                     detailTarget: m.senderName,
+                     title: `Re: ${m.title}`
+                   });
+                   setShowMessageDropdown(false);
+                   setShowComposeModal(true);
+                 }}
                />
              </div>
 
@@ -253,6 +299,18 @@ export default function DashboardLayout({
       
       {/* Modals rendered here escape the stacking context of the animate-fade-in children */}
       {modals}
+      
+      <ComposeMessageModal 
+        isOpen={showComposeModal}
+        onClose={() => setShowComposeModal(false)}
+        onSend={handleSendMessage}
+        sender={{ 
+          id: currentUser?.id || 0, 
+          name: currentUser?.name || 'System', 
+          role: currentUser?.role || 'ADMIN' 
+        }}
+        initialData={replyData}
+      />
     </div>
   );
 }

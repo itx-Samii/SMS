@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { Bell, Trash2, Plus } from "lucide-react";
+import ComposeNoticeModal from "./ComposeNoticeModal";
 
 interface Notice {
   id: number;
@@ -17,9 +18,6 @@ export default function NoticesView({ role }: { role: string }) {
   
   // Admin Create States
   const [showCreateForm, setShowCreateForm] = useState(false);
-  const [title, setTitle] = useState("");
-  const [content, setContent] = useState("");
-  const [targetAudience, setTargetAudience] = useState("ALL");
 
   const fetchNotices = async () => {
     setLoading(true);
@@ -44,25 +42,7 @@ export default function NoticesView({ role }: { role: string }) {
     fetchNotices();
   }, [role]);
 
-  const handleCreateNotice = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!title || !content) return;
-    try {
-      const res = await fetch("/api/notices", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ title, content, targetAudience })
-      });
-      if (res.ok) {
-        setTitle("");
-        setContent("");
-        setShowCreateForm(false);
-        fetchNotices();
-      }
-    } catch {
-      console.error("Failed to create notice");
-    }
-  };
+
 
   const handleDeleteNotice = async (id: number) => {
     if (!confirm("Delete this notice?")) return;
@@ -95,31 +75,11 @@ export default function NoticesView({ role }: { role: string }) {
         </div>
       )}
 
-      {showCreateForm && role === "ADMIN" && (
-        <div className="glass-card animate-fade-in" style={{ backgroundColor: "rgba(59,130,246,0.05)", border: "1px solid rgba(59,130,246,0.2)" }}>
-           <h3 style={{ marginBottom: "1rem", display: "flex", alignItems: "center", gap: "0.5rem", color: "var(--text-main)" }}><Bell size={20} /> New School Announcement</h3>
-           <form onSubmit={handleCreateNotice} style={{ display: "flex", flexDirection: "column", gap: "1rem" }}>
-             <div>
-               <label style={{ display: "block", marginBottom: "0.5rem", fontSize: "0.85rem", color: "var(--text-muted)" }}>Title</label>
-               <input required placeholder="e.g. Quarter Exams Schedule" value={title} onChange={e => setTitle(e.target.value)} style={{ width: "100%", padding: "0.75rem", backgroundColor: "var(--surface)", border: "1px solid var(--border)", borderRadius: "8px", color: "var(--text-main)" }} />
-             </div>
-             <div>
-               <label style={{ display: "block", marginBottom: "0.5rem", fontSize: "0.85rem", color: "var(--text-muted)" }}>Audience</label>
-               <select value={targetAudience} onChange={e => setTargetAudience(e.target.value)} style={{ width: "100%", padding: "0.75rem", backgroundColor: "var(--surface)", border: "1px solid var(--border)", borderRadius: "8px", color: "var(--text-main)" }}>
-                 <option value="ALL">Everyone</option>
-                 <option value="STUDENTS">Students Only</option>
-                 <option value="TEACHERS">Teachers Only</option>
-                 <option value="PARENTS">Parents Only</option>
-               </select>
-             </div>
-             <div>
-               <label style={{ display: "block", marginBottom: "0.5rem", fontSize: "0.85rem", color: "var(--text-muted)" }}>Message Content</label>
-               <textarea required placeholder="Write the details of the announcement..." value={content} onChange={e => setContent(e.target.value)} style={{ width: "100%", padding: "0.75rem", backgroundColor: "var(--surface)", border: "1px solid var(--border)", borderRadius: "8px", color: "var(--text-main)", minHeight: "120px", resize: "vertical" }} />
-             </div>
-             <button type="submit" className="btn-primary" style={{ alignSelf: "flex-end" }}>Post Announcement</button>
-           </form>
-        </div>
-      )}
+      <ComposeNoticeModal 
+        isOpen={showCreateForm} 
+        onClose={() => setShowCreateForm(false)} 
+        onSuccess={fetchNotices} 
+      />
 
       <div style={{ display: "flex", flexDirection: "column", gap: "1rem" }}>
         {notices.length === 0 ? (

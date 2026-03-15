@@ -6,9 +6,12 @@ import { useEffect, useRef } from "react";
 
 interface Notification {
   id: number;
+  senderName: string;
+  audience: string;
   title: string;
   description: string;
   dateTime: string;
+  priority: string;
   status: string;
 }
 
@@ -91,7 +94,10 @@ export default function NotificationDropdown({ isOpen, onClose, notifications, o
               </div>
               <div style={{ flex: 1, minWidth: 0 }}>
                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '0.25rem' }}>
-                    <span style={{ fontWeight: 600, fontSize: '0.9rem', color: n.status === 'Unread' ? 'var(--text-main)' : 'var(--text-muted)' }}>{n.title}</span>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                      <span style={{ fontWeight: 600, fontSize: '0.9rem', color: n.status === 'Unread' ? 'var(--text-main)' : 'var(--text-muted)' }}>{n.title}</span>
+                      {n.priority === 'Urgent' && <span style={{ fontSize: '0.65rem', padding: '0.1rem 0.3rem', borderRadius: '4px', backgroundColor: 'rgba(239, 68, 68, 0.1)', color: 'var(--danger)' }}>Urgent</span>}
+                    </div>
                  </div>
                  <p style={{ 
                    margin: 0, fontSize: '0.85rem', color: n.status === 'Unread' ? 'rgba(255,255,255,0.9)' : 'var(--text-muted)',
@@ -100,7 +106,7 @@ export default function NotificationDropdown({ isOpen, onClose, notifications, o
                    {n.description}
                  </p>
                  <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)', display: 'block', marginTop: '0.25rem' }}>
-                      {n.dateTime}
+                      From {n.senderName} ({n.audience}) • {n.dateTime}
                  </span>
                  
                  <div style={{ display: 'flex', gap: '0.5rem', marginTop: '0.5rem' }}>

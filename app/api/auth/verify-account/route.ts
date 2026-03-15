@@ -38,18 +38,10 @@ export async function POST(request: Request) {
         identifierMatch = dbId === reqIdentifier || dbName === reqIdentifier;
       }
 
-      // Debug logging to help identify mismatches on live server
-      console.log(`Checking User [${u.id}]: RoleMatch: ${roleMatch}, IdentifierMatch: ${identifierMatch}, ContactMatch: ${contactMatch}`);
-      if (roleMatch && identifierMatch && !contactMatch) {
-         console.log(`Mismatch details -> ReqContact: "${reqContact}", DBContact: "${dbContact}"`);
-      }
-
       return roleMatch && identifierMatch && contactMatch;
     });
 
     if (!user) {
-      console.log(`Verification failed for: Role: ${roleUpper}, Identifier: ${identifier}, Contact: ${contactNumber}`);
-      
       // Diagnostic check to see WHY it failed
       const userExists = users.find((u: any) => {
           const roleMatch = u.role === roleUpper;

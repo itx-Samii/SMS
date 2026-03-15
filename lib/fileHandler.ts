@@ -9,9 +9,15 @@ const DATA_DIR = path.join(process.cwd(), 'data');
  */
 async function ensureFileExists(filePath: string) {
   try {
+    const dir = path.dirname(filePath);
+    await fs.mkdir(dir, { recursive: true });
     await fs.access(filePath);
-  } catch {
-    await fs.writeFile(filePath, '[]', 'utf8');
+  } catch (err: any) {
+    if (err.code === 'ENOENT') {
+      await fs.writeFile(filePath, '[]', 'utf8');
+    } else {
+      throw err;
+    }
   }
 }
 
@@ -67,11 +73,21 @@ export async function writeData<T>(fileName: string, data: T[]): Promise<void> {
 
 /**
  * Generates an auto-incrementing ID for a new record based on the file contents.
+ * Supports both JSON and pipe-separated files.
  */
-export async function generateId(fileName: string): Promise<number> {
-  const data = await readData<{ id: number }>(fileName);
+export async function generateId(fileName: string, pipeHeaders?: string[]): Promise<number> {
+  let data: any[] = [];
+  if (pipeHeaders) {
+    data = await readPipeData<any>(fileName, pipeHeaders);
+  } else {
+    data = await readData<{ id: number }>(fileName);
+  }
+  
   if (data.length === 0) return 1;
-  const maxId = Math.max(...data.map(item => item.id || 0));
+  const maxId = Math.max(...data.map(item => {
+    const id = item.id || item.TimetableID || item.AssignmentID || item.DocumentID || 0;
+    return typeof id === 'string' ? parseInt(id) : id;
+  }));
   return maxId + 1;
 }
 
@@ -93,7 +109,11 @@ export async function readPipeData<T>(fileName: string, headers: string[]): Prom
   try {
     const data = await fs.readFile(filePath, 'utf8');
     const lines = data.split('\n').filter(line => line.trim());
-    return lines.map(line => {
+    
+    // Skip header if it matches exactly
+    const startIdx = (lines.length > 0 && lines[0].toLowerCase().includes(headers[0].toLowerCase())) ? 1 : 0;
+    
+    return lines.slice(startIdx).map(line => {
       const parts = line.split('|');
       const obj: any = {};
       headers.forEach((header, i) => {

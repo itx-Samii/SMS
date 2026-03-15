@@ -28,5 +28,10 @@
     "id": 6,
     "classId": 2,
     "name": "Computer Science"
+  },
+  {
+    "id": 7,
+    "classId": 3,
+    "name": "Physics"
   }
 ]

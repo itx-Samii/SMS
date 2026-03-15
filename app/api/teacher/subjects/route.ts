@@ -21,20 +21,32 @@ export async function GET(request: Request) {
   }
 }
 
+import { z } from 'zod';
+
+const subjectSchema = z.object({
+  classId: z.coerce.number().int().positive(),
+  name: z.string().min(2, 'Subject name must be at least 2 characters').max(50),
+});
+
 // POST Add/Update subjects for a class
 export async function POST(request: Request) {
   try {
     const body = await request.json();
-    const { classId, name } = body;
+    const validation = subjectSchema.safeParse(body);
 
-    if (!classId || !name) {
-      return NextResponse.json({ error: 'Missing fields' }, { status: 400 });
+    if (!validation.success) {
+      return NextResponse.json({ 
+        error: 'Validation failed', 
+        details: validation.error.format() 
+      }, { status: 400 });
     }
+
+    const { classId, name } = validation.data;
 
     const subjects = await readData<any>('subjects.txt');
     
     // Check if subject already exists for this class
-    const exists = subjects.find((s: any) => s.classId === parseInt(classId, 10) && s.name.toLowerCase() === name.toLowerCase());
+    const exists = subjects.find((s: any) => s.classId === classId && s.name.toLowerCase() === name.toLowerCase());
     if (exists) {
       return NextResponse.json({ error: 'Subject already exists for this class' }, { status: 400 });
     }
@@ -42,7 +54,7 @@ export async function POST(request: Request) {
     const newId = await generateId('subjects.txt');
     const newSubject = {
       id: newId,
-      classId: parseInt(classId, 10),
+      classId: classId,
       name
     };
 

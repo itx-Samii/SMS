@@ -6,9 +6,12 @@ import { Bell, LayoutDashboard, Presentation, BookOpen, Users, Shield, Clipboard
 
 interface Notification {
   id: number;
+  senderName: string;
+  audience: string;
   title: string;
   description: string;
   dateTime: string;
+  priority: string;
   status: string;
 }
 
@@ -159,9 +162,13 @@ export default function NotificationsPage() {
                        <h3 style={{ margin: 0, fontSize: "1.1rem", display: "flex", alignItems: "center", gap: "0.5rem" }}>
                          {n.title} 
                          {n.status === 'Unread' && <span className="badge badge-red">New</span>}
+                         {n.priority === 'Urgent' && <span className="badge badge-danger">Urgent</span>}
                        </h3>
-                       <p style={{ margin: "0.25rem 0 0 0", fontSize: "0.85rem", color: "var(--text-muted)" }}>
-                         Date: <span style={{ color: "var(--text-main)" }}>{n.dateTime}</span>
+                       <p style={{ margin: "0.25rem 0 0 0", fontSize: "0.9rem", color: "var(--text-main)" }}>
+                         From: {n.senderName}
+                       </p>
+                       <p style={{ margin: "0.15rem 0 0 0", fontSize: "0.80rem", color: "var(--text-muted)" }}>
+                         To: {n.audience} • Date: {n.dateTime}
                        </p>
                     </div>
                   </div>
