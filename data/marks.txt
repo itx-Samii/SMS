@@ -1,17 +1,1 @@
-[
-  {
-    "id": 1,
-    "studentId": 3,
-    "classId": 1,
-    "section": "Sec-A",
-    "teacherId": 2,
-    "subject": "Mathematics",
-    "assessmentType": "Quiz",
-    "obtained": 18,
-    "total": 20,
-    "percentage": 90,
-    "grade": "A+",
-    "date": "2026-03-07",
-    "remarks": "Excellent performance"
-  }
-]
+[]

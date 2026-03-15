@@ -112,7 +112,7 @@ export async function POST(request: Request) {
             finalFee: fFee,
             paidFee: 0,
             remainingFee: fFee,
-            status: 'Unpaid',
+            status: 'Pending',
             remarks: remarks
           });
         }
@@ -149,7 +149,7 @@ export async function POST(request: Request) {
         finalFee: fFee,
         paidFee: pFee,
         remainingFee: fFee - pFee,
-        status: status || 'Unpaid',
+        status: status || 'Pending',
         remarks: remarks || ''
       });
     }

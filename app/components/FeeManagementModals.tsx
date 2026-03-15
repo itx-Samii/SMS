@@ -16,7 +16,7 @@ interface FeeModalProps {
 export function SingleFeeModal({ isOpen, onClose, onSuccess, editingFee, students, classes }: FeeModalProps) {
   const [formData, setFormData] = useState({ 
     studentId: "", classId: "", sectionId: "", month: "", year: "2026", 
-    originalFee: "", discount: "0", finalFee: "", paidFee: "", status: "Unpaid", remarks: "" 
+    originalFee: "", discount: "0", finalFee: "", paidFee: "", status: "Pending", remarks: "" 
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
@@ -41,7 +41,7 @@ export function SingleFeeModal({ isOpen, onClose, onSuccess, editingFee, student
       } else {
         setFormData({ 
           studentId: "", classId: "", sectionId: "", month: "", year: "2026", 
-          originalFee: "", discount: "0", finalFee: "", paidFee: "", status: "Unpaid", remarks: "" 
+          originalFee: "", discount: "0", finalFee: "", paidFee: "", status: "Pending", remarks: "" 
         });
         setSearchTerm("");
       }
@@ -172,7 +172,7 @@ export function SingleFeeModal({ isOpen, onClose, onSuccess, editingFee, student
             <label className="form-label">Status</label>
             <select className="form-input" value={formData.status} onChange={e => setFormData({...formData, status: e.target.value})}>
               <option value="Paid">Paid</option>
-              <option value="Unpaid">Unpaid</option>
+              <option value="Pending">Pending</option>
               <option value="Partial">Partial</option>
             </select>
           </div>

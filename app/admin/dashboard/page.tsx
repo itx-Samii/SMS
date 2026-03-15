@@ -97,7 +97,7 @@ export default function AdminDashboard() {
   const [showBulkFeeModal, setShowBulkFeeModal] = useState(false);
   const [feeForm, setFeeForm] = useState({ 
     studentId: "", classId: "", sectionId: "", month: "", year: "2026", 
-    originalFee: "", discount: "0", finalFee: "", paidFee: "", status: "Unpaid", remarks: "" 
+    originalFee: "", discount: "0", finalFee: "", paidFee: "", status: "Pending", remarks: "" 
   });
   const [bulkFeeForm, setBulkFeeForm] = useState({ classId: "", sectionId: "", month: "", year: "2026", originalFee: "" });
   const [editingFeeId, setEditingFeeId] = useState<number | null>(null);
@@ -387,7 +387,7 @@ export default function AdminDashboard() {
         setEditingFeeId(null);
         setFeeForm({ 
           studentId: "", classId: "", sectionId: "", month: "", year: "2026", 
-          originalFee: "", discount: "0", finalFee: "", paidFee: "", status: "Unpaid", remarks: "" 
+          originalFee: "", discount: "0", finalFee: "", paidFee: "", status: "Pending", remarks: "" 
         });
         setStudentSearchTerm("");
         fetchData();
@@ -1045,7 +1045,7 @@ export default function AdminDashboard() {
                       onChange={e => setFeeFilters({...feeFilters, status: e.target.value})}
                     >
                       <option value="">All Status</option>
-                      <option>Paid</option><option>Unpaid</option><option>Partial</option>
+                      <option>Paid</option><option>Pending</option><option>Partial</option>
                     </select>
                     <div style={{ position: "relative", flex: 1, minWidth: "200px" }}>
                       <input 
@@ -1063,7 +1063,7 @@ export default function AdminDashboard() {
                     <button className="btn-ghost" onClick={handleGeneratePDF} style={{ border: "1px solid var(--primary-light)", display: "flex", alignItems: "center", gap: "0.5rem" }}>
                       <Printer size={16} /> Print Report
                     </button>
-                    <button className="btn-primary" onClick={() => { setEditingFeeId(null); setFeeForm({ studentId: "", classId: "", sectionId: "", month: "", year: "2026", originalFee: "", discount: "0", finalFee: "", paidFee: "", status: "Unpaid", remarks: "" }); setShowFeeModal(true); }}>+ Add Fee</button>
+                    <button className="btn-primary" onClick={() => { setEditingFeeId(null); setFeeForm({ studentId: "", classId: "", sectionId: "", month: "", year: "2026", originalFee: "", discount: "0", finalFee: "", paidFee: "", status: "Pending", remarks: "" }); setShowFeeModal(true); }}>+ Add Fee</button>
                   </div>
                 </div>
 

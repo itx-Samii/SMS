@@ -1,16 +1,1 @@
-[
-  {
-    "id": 1,
-    "name": "Class 1",
-    "section": "Sec-A",
-    "teacherId": 2,
-    "teacherName": "Sarah Jenkins"
-  },
-  {
-    "id": 2,
-    "name": "Class 2",
-    "section": "Sec-A",
-    "teacherId": 5,
-    "teacherName": "Michael Scott"
-  }
-]
+[]
