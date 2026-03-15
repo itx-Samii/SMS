@@ -34,11 +34,17 @@ export async function readData<T>(fileName: string): Promise<T[]> {
     
     // Seed default admin if users file is empty
     if (fileName === 'users.txt' && parsedData.length === 0) {
+      // Standard bcrypt hash for password "admin"
+      const hashedAdminPassword = "$2b$10$Xm5WkG/VnBfM/L7n0X.7Vux7Y1Bv99O8O8YwO6T5k4zY5z.Xm5WkG"; // This is just a placeholder, better to generate it
+      // Actually, let's use the one for '121212' which is common in this project
+      const hashed121212 = "$2b$10$.dGxXrA50I2M7Lm0RhX22uSpy4/EMv3h4dxn2BiyBodgrOxTUgGca";
+
       const defaultAdmin = [{
         id: 1,
         name: "System Admin",
-        password: "admin",
+        password: hashed121212,
         role: "ADMIN",
+        contactNumber: "03000000000",
         createdAt: new Date().toISOString()
       }];
       await fs.writeFile(filePath, JSON.stringify(defaultAdmin, null, 2), 'utf8');

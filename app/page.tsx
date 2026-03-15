@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { GraduationCap, LogIn, ArrowRight } from "lucide-react";
+import { GraduationCap, LogIn, ArrowRight, Eye, EyeOff } from "lucide-react";
 import RecoveryModal from "./components/RecoveryModal";
 
 export default function Home() {
@@ -12,6 +12,7 @@ export default function Home() {
   const [role, setRole] = useState("STUDENT");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
 
   const [showForgotModal, setShowForgotModal] = useState(false);
 
@@ -152,14 +153,35 @@ export default function Home() {
                    Forgot?
                  </a>
               </div>
-              <input 
-                type="password" 
-                required 
-                placeholder="••••••••" 
-                value={password} 
-                onChange={(e) => setPassword(e.target.value)} 
-                style={{ padding: "0.85rem 1rem", fontSize: "1rem" }}
-              />
+              <div style={{ position: "relative" }}>
+                <input 
+                  type={showPassword ? "text" : "password"} 
+                  required 
+                  placeholder="••••••••" 
+                  value={password} 
+                  onChange={(e) => setPassword(e.target.value)} 
+                  style={{ padding: "0.85rem 3.5rem 0.85rem 1rem", fontSize: "1rem" }}
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  style={{
+                    position: "absolute",
+                    right: "0.75rem",
+                    top: "50%",
+                    transform: "translateY(-50%)",
+                    background: "transparent",
+                    color: "var(--text-muted)",
+                    padding: "4px",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center"
+                  }}
+                  title={showPassword ? "Hide password" : "Show password"}
+                >
+                  {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                </button>
+              </div>
             </div>
 
             <button 
