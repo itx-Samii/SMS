@@ -46,12 +46,24 @@ export async function GET() {
       await writeData('users.txt', users);
       return NextResponse.json({ 
         message: `Database fixed successfully. ${fixCount} entries updated.`,
+        details: {
+          totalUsers: users.length,
+          adminFound: !!admin,
+          hashedPasswords: users.filter((u:any) => u.password && u.password.startsWith('$2')).length,
+          plainPasswords: users.filter((u:any) => u.password && !u.password.startsWith('$2')).length
+        },
         systemStatus: "Ready"
       });
     }
 
     return NextResponse.json({ 
       message: "Database is already in a healthy state.",
+      details: {
+        totalUsers: users.length,
+        adminFound: !!admin,
+        hashedPasswords: users.filter((u:any) => u.password && u.password.startsWith('$2')).length,
+        plainPasswords: users.filter((u:any) => u.password && !u.password.startsWith('$2')).length
+      },
       systemStatus: "Healthy"
     });
 
