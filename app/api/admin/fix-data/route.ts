@@ -14,7 +14,7 @@ export async function GET() {
     const hashed121212 = await bcrypt.hash('121212', salt);
 
     // 1. Ensure Admin exists and has a known hashed password
-    let admin = users.find((u: any) => u.id === 1 || u.role === 'ADMIN');
+    const admin = users.find((u: any) => u.id === 1 || u.role === 'ADMIN');
     if (admin) {
       if (!admin.password.startsWith('$2') || admin.password === '121212') {
         admin.password = hashed121212;
@@ -35,7 +35,7 @@ export async function GET() {
     }
 
     // 2. Hash any other plain text passwords
-    for (let user of users) {
+    for (const user of users) {
       if (user.password && !user.password.startsWith('$2')) {
         user.password = await bcrypt.hash(user.password, salt);
         fixCount++;

@@ -18,6 +18,7 @@ import VoucherPreviewModal from "@/app/components/VoucherPreviewModal";
 import TimetableModal from "@/app/components/TimetableModal";
 import MeritList from "@/app/components/MeritList";
 import StudentDocuments from "@/app/components/StudentDocuments";
+import { exportToCSV } from "@/lib/exportUtils";
 
 interface User {
   id: number;
@@ -49,7 +50,7 @@ interface User {
 
 export default function AdminDashboard() {
   const router = useRouter();
-  const [currentUser, setCurrentUser] = useState<any>(null);
+  const [currentUser, setCurrentUser] = useState<User | null>(null);
 
   const [showComposeModal, setShowComposeModal] = useState(false);
   const [users, setUsers] = useState<User[]>([]); // For teachers, parents, admins
@@ -696,6 +697,15 @@ export default function AdminDashboard() {
             <div className="table-container animate-fade-in">
               <div className="table-header">
                 <span>{menuItems.find(m => m.id === activeTab)?.label} List</span>
+                {activeTab === "attendance" && (
+                  <button 
+                    className="btn-secondary" 
+                    style={{ padding: "0.4rem 1rem", fontSize: "0.85rem" }}
+                    onClick={() => exportToCSV(attendances, `Attendance_Export_${new Date().toISOString().split('T')[0]}`)}
+                  >
+                    Export CSV
+                  </button>
+                )}
               </div>
               <table>
                 {/* USERS TABLE */}
@@ -1062,6 +1072,13 @@ export default function AdminDashboard() {
                     <button className="btn-ghost" onClick={() => setShowBulkFeeModal(true)} style={{ border: "1px solid var(--primary-light)" }}>Bulk Generate</button>
                     <button className="btn-ghost" onClick={handleGeneratePDF} style={{ border: "1px solid var(--primary-light)", display: "flex", alignItems: "center", gap: "0.5rem" }}>
                       <Printer size={16} /> Print Report
+                    </button>
+                    <button 
+                      className="btn-ghost" 
+                      onClick={() => exportToCSV(fees, `Fees_Export_${new Date().toISOString().split('T')[0]}`)}
+                      style={{ border: "1px solid var(--primary-light)" }}
+                    >
+                      Export CSV
                     </button>
                     <button className="btn-primary" onClick={() => { setEditingFeeId(null); setFeeForm({ studentId: "", classId: "", sectionId: "", month: "", year: "2026", originalFee: "", discount: "0", finalFee: "", paidFee: "", status: "Pending", remarks: "" }); setShowFeeModal(true); }}>+ Add Fee</button>
                   </div>

@@ -22,13 +22,11 @@ export async function POST(request: Request) {
     );
 
     if (!user) {
-      console.log(`Login Failed: User not found for ID/Name: "${id}", Role: "${role}"`);
       return NextResponse.json({ error: 'Invalid credentials' }, { status: 401 });
     }
 
     const passwordMatch = await bcrypt.compare(password, user.password);
     if (!passwordMatch) {
-      console.log(`Login Failed: Password mismatch for user: "${user.name}" (ID: ${user.id})`);
       return NextResponse.json({ error: 'Invalid credentials' }, { status: 401 });
     }
 

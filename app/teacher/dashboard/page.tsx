@@ -9,6 +9,8 @@ import TeacherAssignmentsView from "@/app/components/TeacherAssignmentsView";
 import { Users, ClipboardCheck, Award, BookOpen, MessageSquare, LayoutDashboard, CheckCircle, Bell, Book, Clock, BarChart3, Trophy } from "lucide-react";
 import ClassPerformanceAnalytics from "@/app/components/ClassPerformanceAnalytics";
 import MeritList from "@/app/components/MeritList";
+import { exportToCSV } from "@/lib/exportUtils";
+import { User as UserIcon } from "lucide-react";
 
 export default function TeacherDashboard() {
   const router = useRouter();
@@ -64,6 +66,7 @@ export default function TeacherDashboard() {
     { id: "messages", label: "Messages", icon: MessageSquare, badge: parents.length },
     { id: "notices", label: "Announcements", icon: Bell },
     { id: "timetable", label: "My Schedule", icon: Clock },
+    { id: "my-profile", label: "My Profile", icon: UserIcon },
   ];
 
   useEffect(() => {
@@ -684,6 +687,13 @@ export default function TeacherDashboard() {
             <div className="table-container animate-fade-in" style={{ flex: "1 1 500px", maxWidth: "800px" }}>
               <div className="table-header">
                 <span>Recent Marks Entries ({user.subject || 'All'})</span>
+                <button 
+                  className="btn-secondary" 
+                  style={{ padding: "0.4rem 1rem", fontSize: "0.85rem" }}
+                  onClick={() => exportToCSV(marks, `Marks_Export_Class_${user.assignedClassId}_${new Date().toISOString().split('T')[0]}`)}
+                >
+                  Export CSV
+                </button>
               </div>
               <table>
                 <thead>
@@ -806,6 +816,91 @@ export default function TeacherDashboard() {
                    )}
                  </tbody>
                </table>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {activeTab === "my-profile" && (
+        <div className="animate-fade-in" style={{ padding: "1rem" }}>
+          <div className="glass-card" style={{ padding: 0, overflow: "hidden", border: "1px solid var(--border)", boxShadow: "0 10px 30px -10px rgba(0,0,0,0.5)" }}>
+            {/* Header */}
+            <div style={{ height: "160px", background: "linear-gradient(135deg, var(--primary) 0%, var(--accent-pink) 100%)", position: "relative" }}>
+               <div style={{ position: "absolute", bottom: "-50px", left: "40px", display: "flex", alignItems: "flex-end", gap: "1.5rem" }}>
+                 <div className="avatar" style={{ width: "120px", height: "120px", border: "4px solid var(--bg-dark)", boxShadow: "0 4px 12px rgba(0,0,0,0.3)" }}>
+                   <img src={`https://ui-avatars.com/api/?name=${encodeURIComponent(user.name)}&background=1e293b&color=fff&size=128`} alt={user.name} />
+                 </div>
+                 <div style={{ marginBottom: "15px" }}>
+                   <h2 style={{ fontSize: "2rem", fontWeight: 800, color: "#fff", textShadow: "0 2px 4px rgba(0,0,0,0.2)" }}>{user.name}</h2>
+                   <div style={{ display: "flex", gap: "0.5rem" }}>
+                     <span className="badge badge-purple">Teacher ID: #{user.id}</span>
+                     <span className="badge badge-blue">Class Assigned: {user.assignedClassId || 'None'}</span>
+                   </div>
+                 </div>
+               </div>
+            </div>
+
+            <div style={{ padding: "70px 40px 40px 40px" }}>
+               <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(300px, 1fr))", gap: "2.5rem" }}>
+                 
+                 {/* Personal Info */}
+                 <div>
+                   <div style={{ display: "flex", alignItems: "center", gap: "0.75rem", marginBottom: "1.5rem", borderBottom: "1px solid var(--border)", paddingBottom: "0.75rem" }}>
+                     <UserIcon size={20} color="var(--primary)" />
+                     <h3 style={{ fontSize: "1.1rem", fontWeight: 700 }}>Personal Profile</h3>
+                   </div>
+                   <div style={{ display: "flex", flexDirection: "column", gap: "1.25rem" }}>
+                     <div style={{ display: "grid", gridTemplateColumns: "120px 1fr" }}>
+                       <span style={{ color: "var(--text-muted)", fontSize: "0.9rem" }}>Contact</span>
+                       <span style={{ fontWeight: 500 }}>{user.contactNumber || "N/A"}</span>
+                     </div>
+                     <div style={{ display: "grid", gridTemplateColumns: "120px 1fr" }}>
+                       <span style={{ color: "var(--text-muted)", fontSize: "0.9rem" }}>Role</span>
+                       <span className="badge badge-purple" style={{ width: "fit-content" }}>{user.role}</span>
+                     </div>
+                     <div style={{ display: "grid", gridTemplateColumns: "120px 1fr" }}>
+                       <span style={{ color: "var(--text-muted)", fontSize: "0.9rem" }}>Joining Date</span>
+                       <span style={{ fontWeight: 500 }}>{user.createdAt ? new Date(user.createdAt).toLocaleDateString() : "N/A"}</span>
+                     </div>
+                   </div>
+                 </div>
+
+                 {/* Official Record */}
+                 <div>
+                   <div style={{ display: "flex", alignItems: "center", gap: "0.75rem", marginBottom: "1.5rem", borderBottom: "1px solid var(--border)", paddingBottom: "0.75rem" }}>
+                     <CheckCircle size={20} color="var(--primary)" />
+                     <h3 style={{ fontSize: "1.1rem", fontWeight: 700 }}>Official Assignment</h3>
+                   </div>
+                   <div style={{ display: "flex", flexDirection: "column", gap: "1.25rem" }}>
+                     <div style={{ display: "grid", gridTemplateColumns: "120px 1fr", alignItems: "center" }}>
+                       <span style={{ color: "var(--text-muted)", fontSize: "0.9rem" }}>Assigned Class</span>
+                       <span className="badge badge-blue" style={{ width: "fit-content" }}>Class {user.assignedClassId || 'None'}</span>
+                     </div>
+                     <div style={{ display: "grid", gridTemplateColumns: "120px 1fr" }}>
+                       <span style={{ color: "var(--text-muted)", fontSize: "0.9rem" }}>Specialization</span>
+                       <span style={{ fontWeight: 500 }}>{user.subject || "General Teacher"}</span>
+                     </div>
+                     <div style={{ display: "grid", gridTemplateColumns: "120px 1fr" }}>
+                       <span style={{ color: "var(--text-muted)", fontSize: "0.9rem" }}>Total Students</span>
+                       <span style={{ fontWeight: 500 }}>{students.length} Under Supervision</span>
+                     </div>
+                   </div>
+                 </div>
+               </div>
+
+               <div style={{ marginTop: "3rem", padding: "1.5rem", borderRadius: "12px", backgroundColor: "rgba(255,255,255,0.02)", border: "1px solid var(--border)" }}>
+                  <h4 style={{ marginBottom: "1rem", fontWeight: 600 }}>Quick System Status</h4>
+                  <div style={{ display: "flex", gap: "2rem" }}>
+                     <div>
+                       <span style={{ display: "block", color: "var(--text-muted)", fontSize: "0.8rem" }}>Pending Assignments</span>
+                       <span style={{ fontWeight: 700, fontSize: "1.2rem", color: "var(--orange)" }}>{assignments.length}</span>
+                     </div>
+                     <div>
+                        <span style={{ display: "block", color: "var(--text-muted)", fontSize: "0.8rem" }}>Today's Date</span>
+                        <span style={{ fontWeight: 700, fontSize: "1.2rem" }}>{new Date().toLocaleDateString()}</span>
+                     </div>
+                  </div>
+               </div>
             </div>
           </div>
         </div>

@@ -34,10 +34,13 @@ const migratedLines = lines.map(line => {
             parts[3], // SectionID
             month,    // Month
             year,     // Year
-            parts[5], // Total
-            parts[6], // Paid
-            parts[7], // Remaining
-            parts[8]  // Status
+            parts[5], // OriginalFee (TotalFee in old)
+            "0",      // Discount
+            parts[5], // FinalFee (TotalFee in old)
+            parts[6], // PaidFee
+            parts[7], // RemainingFee
+            parts[8], // Status
+            ""        // Remarks
         ];
         return newParts.join('|');
     }

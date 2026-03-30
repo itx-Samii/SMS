@@ -81,7 +81,7 @@ export async function PUT(req: NextRequest) {
       return NextResponse.json({ error: "Document ID is required" }, { status: 400 });
     }
 
-    let documents = await readPipeData<any>(DOCUMENTS_FILE, DOCUMENTS_HEADERS);
+    const documents = await readPipeData<any>(DOCUMENTS_FILE, DOCUMENTS_HEADERS);
     const index = documents.findIndex(doc => doc.DocumentID.toString() === DocumentID.toString());
 
     if (index === -1) {

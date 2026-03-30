@@ -5,16 +5,16 @@ import path from 'path';
 const DATA_DIR = path.join(process.cwd(), 'data');
 
 /**
- * Ensures a file exists, creating it with an empty JSON array if it doesn't.
+ * Ensures a file exists, creating it with a default content if it doesn't.
  */
-async function ensureFileExists(filePath: string) {
+async function ensureFileExists(filePath: string, defaultContent: string = '[]') {
   try {
     const dir = path.dirname(filePath);
     await fs.mkdir(dir, { recursive: true });
     await fs.access(filePath);
   } catch (err: any) {
     if (err.code === 'ENOENT') {
-      await fs.writeFile(filePath, '[]', 'utf8');
+      await fs.writeFile(filePath, defaultContent, 'utf8');
     } else {
       throw err;
     }
@@ -110,7 +110,7 @@ export async function clearData(fileName: string): Promise<void> {
 export async function readPipeData<T>(fileName: string, headers: string[]): Promise<T[]> {
   const filePath = path.join(DATA_DIR, fileName);
   // Ensure file exists with empty string instead of [] for pipe data
-  try { await fs.access(filePath); } catch { await fs.writeFile(filePath, '', 'utf8'); }
+  await ensureFileExists(filePath, '');
   
   try {
     const data = await fs.readFile(filePath, 'utf8');

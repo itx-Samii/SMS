@@ -6,7 +6,7 @@ import DashboardLayout, { MenuItem } from "@/app/components/DashboardLayout";
 import MetricCard from "@/app/components/MetricCard";
 import NoticesView from "@/app/components/NoticesView";
 import StudentAssignmentsView from "@/app/components/StudentAssignmentsView";
-import { LayoutDashboard, CalendarCheck, BookOpen, Award, DollarSign, Settings, Bell, CalendarDays, Printer, Clock, BarChart3 } from "lucide-react";
+import { LayoutDashboard, CalendarCheck, BookOpen, Award, DollarSign, Settings, Bell, CalendarDays, Printer, Clock, BarChart3, User } from "lucide-react";
 import VoucherPreviewModal from "@/app/components/VoucherPreviewModal";
 import PerformanceAnalytics from "@/app/components/PerformanceAnalytics";
 import MeritList from "@/app/components/MeritList";
@@ -35,6 +35,7 @@ export default function StudentDashboard() {
     { id: "results", label: "Exam Results", icon: Award },
     { id: "fees", label: "Fee Vouchers", icon: DollarSign },
     { id: "notices", label: "Announcements", icon: Bell },
+    { id: "my-profile", label: "My Profile", icon: User },
     { id: "profile", label: "Settings", icon: Settings },
   ];
 
@@ -396,6 +397,124 @@ export default function StudentDashboard() {
                   )}
                 </div>
               )}
+            </div>
+          )}
+          
+          {activeTab === "my-profile" && (
+            <div className="animate-fade-in" style={{ padding: "1rem" }}>
+              <div className="glass-card" style={{ padding: 0, overflow: "hidden", border: "1px solid var(--border)", boxShadow: "0 10px 30px -10px rgba(0,0,0,0.5)" }}>
+                {/* Profile Header Header */}
+                <div style={{ height: "160px", background: "linear-gradient(135deg, var(--primary) 0%, var(--accent-purple) 100%)", position: "relative" }}>
+                   <div style={{ position: "absolute", bottom: "-50px", left: "40px", display: "flex", alignItems: "flex-end", gap: "1.5rem" }}>
+                     <div className="avatar" style={{ width: "120px", height: "120px", border: "4px solid var(--bg-dark)", boxShadow: "0 4px 12px rgba(0,0,0,0.3)" }}>
+                       <img src={`https://ui-avatars.com/api/?name=${encodeURIComponent(user.name)}&background=1e293b&color=fff&size=128`} alt={user.name} />
+                     </div>
+                     <div style={{ marginBottom: "15px" }}>
+                       <h2 style={{ fontSize: "2rem", fontWeight: 800, color: "#fff", textShadow: "0 2px 4px rgba(0,0,0,0.2)" }}>{user.name}</h2>
+                       <div style={{ display: "flex", gap: "0.5rem" }}>
+                         <span className="badge badge-blue">Roll # {user.rollNumber || "N/A"}</span>
+                         <span className="badge badge-purple">{data?.student?.class || "N/A"}</span>
+                       </div>
+                     </div>
+                   </div>
+                </div>
+
+                <div style={{ padding: "70px 40px 40px 40px" }}>
+                   <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(300px, 1fr))", gap: "2.5rem" }}>
+                     
+                     {/* Personal Information */}
+                     <div>
+                       <div style={{ display: "flex", alignItems: "center", gap: "0.75rem", marginBottom: "1.5rem", borderBottom: "1px solid var(--border)", paddingBottom: "0.75rem" }}>
+                         <User size={20} color="var(--primary)" />
+                         <h3 style={{ fontSize: "1.1rem", fontWeight: 700 }}>Personal Information</h3>
+                       </div>
+                       <div style={{ display: "flex", flexDirection: "column", gap: "1.25rem" }}>
+                         <div style={{ display: "grid", gridTemplateColumns: "120px 1fr" }}>
+                           <span style={{ color: "var(--text-muted)", fontSize: "0.9rem" }}>Full Name</span>
+                           <span style={{ fontWeight: 500 }}>{user.name}</span>
+                         </div>
+                         <div style={{ display: "grid", gridTemplateColumns: "120px 1fr" }}>
+                           <span style={{ color: "var(--text-muted)", fontSize: "0.9rem" }}>Gender</span>
+                           <span style={{ fontWeight: 500 }}>{user.gender || "N/A"}</span>
+                         </div>
+                         <div style={{ display: "grid", gridTemplateColumns: "120px 1fr" }}>
+                           <span style={{ color: "var(--text-muted)", fontSize: "0.9rem" }}>Date of Birth</span>
+                           <span style={{ fontWeight: 500 }}>{user.dob || "N/A"}</span>
+                         </div>
+                         <div style={{ display: "grid", gridTemplateColumns: "120px 1fr" }}>
+                           <span style={{ color: "var(--text-muted)", fontSize: "0.9rem" }}>Contact</span>
+                           <span style={{ fontWeight: 500 }}>{user.contactNumber || "N/A"}</span>
+                         </div>
+                         <div style={{ display: "grid", gridTemplateColumns: "120px 1fr" }}>
+                           <span style={{ color: "var(--text-muted)", fontSize: "0.9rem" }}>Address</span>
+                           <span style={{ fontWeight: 500 }}>{user.address || "N/A"}</span>
+                         </div>
+                       </div>
+                     </div>
+
+                     {/* Academic Status */}
+                     <div>
+                       <div style={{ display: "flex", alignItems: "center", gap: "0.75rem", marginBottom: "1.5rem", borderBottom: "1px solid var(--border)", paddingBottom: "0.75rem" }}>
+                         <BarChart3 size={20} color="var(--primary)" />
+                         <h3 style={{ fontSize: "1.1rem", fontWeight: 700 }}>Academic Snapshot</h3>
+                       </div>
+                       <div style={{ display: "flex", flexDirection: "column", gap: "1.25rem" }}>
+                         <div style={{ display: "grid", gridTemplateColumns: "120px 1fr", alignItems: "center" }}>
+                           <span style={{ color: "var(--text-muted)", fontSize: "0.9rem" }}>Current Class</span>
+                           <span className="badge badge-blue" style={{ width: "fit-content" }}>{data?.student?.class || "N/A"}</span>
+                         </div>
+                         <div style={{ display: "grid", gridTemplateColumns: "120px 1fr" }}>
+                           <span style={{ color: "var(--text-muted)", fontSize: "0.9rem" }}>Section</span>
+                           <span style={{ fontWeight: 500 }}>{user.section || "N/A"}</span>
+                         </div>
+                         <div style={{ display: "grid", gridTemplateColumns: "120px 1fr" }}>
+                           <span style={{ color: "var(--text-muted)", fontSize: "0.9rem" }}>Admission Date</span>
+                           <span style={{ fontWeight: 500 }}>{user.admissionDate || "N/A"}</span>
+                         </div>
+                         <div style={{ display: "grid", gridTemplateColumns: "120px 1fr", alignItems: "center" }}>
+                           <span style={{ color: "var(--text-muted)", fontSize: "0.9rem" }}>Attendance</span>
+                           <div style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
+                             <div style={{ flex: 1, height: "6px", backgroundColor: "rgba(255,255,255,0.05)", borderRadius: "3px", minWidth: "100px" }}>
+                               <div style={{ width: `${attendancePercentage}%`, height: "100%", backgroundColor: "var(--success)", borderRadius: "3px" }}></div>
+                             </div>
+                             <span style={{ fontSize: "0.85rem", fontWeight: 600 }}>{attendancePercentage}%</span>
+                           </div>
+                         </div>
+                         <div style={{ display: "grid", gridTemplateColumns: "120px 1fr", alignItems: "center" }}>
+                           <span style={{ color: "var(--text-muted)", fontSize: "0.9rem" }}>Category</span>
+                           <span className={`badge ${user.category === 'Scholarship' ? 'badge-success' : 'badge-warning'}`}>{user.category || 'Normal'}</span>
+                         </div>
+                       </div>
+                     </div>
+
+                     {/* Family Details */}
+                     <div>
+                       <div style={{ display: "flex", alignItems: "center", gap: "0.75rem", marginBottom: "1.5rem", borderBottom: "1px solid var(--border)", paddingBottom: "0.75rem" }}>
+                         <Award size={20} color="var(--primary)" />
+                         <h3 style={{ fontSize: "1.1rem", fontWeight: 700 }}>Parental Information</h3>
+                       </div>
+                       <div style={{ display: "flex", flexDirection: "column", gap: "1.25rem" }}>
+                         <div style={{ display: "grid", gridTemplateColumns: "120px 1fr" }}>
+                           <span style={{ color: "var(--text-muted)", fontSize: "0.9rem" }}>Father's Name</span>
+                           <span style={{ fontWeight: 500 }}>{user.fatherName || "N/A"}</span>
+                         </div>
+                         <div style={{ display: "grid", gridTemplateColumns: "120px 1fr" }}>
+                           <span style={{ color: "var(--text-muted)", fontSize: "0.9rem" }}>Mother's Name</span>
+                           <span style={{ fontWeight: 500 }}>{user.motherName || "N/A"}</span>
+                         </div>
+                         <div style={{ display: "grid", gridTemplateColumns: "120px 1fr" }}>
+                           <span style={{ color: "var(--text-muted)", fontSize: "0.9rem" }}>Parent Contact</span>
+                           <span style={{ fontWeight: 500 }}>{user.parentContactNumber || "N/A"}</span>
+                         </div>
+                         <div style={{ display: "grid", gridTemplateColumns: "120px 1fr" }}>
+                           <span style={{ color: "var(--text-muted)", fontSize: "0.9rem" }}>Siblings ID</span>
+                           <span style={{ fontWeight: 500 }}>{user.childId || "None"}</span>
+                         </div>
+                       </div>
+                     </div>
+                   </div>
+                </div>
+              </div>
             </div>
           )}
 

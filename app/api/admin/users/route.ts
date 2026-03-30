@@ -167,7 +167,7 @@ export async function PUT(request: Request) {
       totalFee, paidFee, remainingFee 
     } = body;
 
-    let users = await readData<any>('users.txt');
+    const users = await readData<any>('users.txt');
     const userId = parseInt(id, 10);
     const userIndex = users.findIndex(u => u.id === userId);
 
