@@ -38,7 +38,7 @@ async function resetData() {
   const hashed121212 = "$2b$10$9regxHkV5B9MljyjCNdla.S52Cz5x6A6skdMuH6bKdXQA5TXwnmka";
   const defaultAdmin = [{
     id: 1,
-    name: "System Admin",
+    name: "Admin",
     password: hashed121212,
     role: "ADMIN",
     contactNumber: "03000000000",
