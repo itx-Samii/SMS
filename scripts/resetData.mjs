@@ -35,7 +35,7 @@ async function resetData() {
 
   // 2. Special reset for users.txt (Keep Admin Only)
   const usersPath = path.join(DATA_DIR, 'users.txt');
-  const hashed121212 = "$2b$10$.dGxXrA50I2M7Lm0RhX22uSpy4/EMv3h4dxn2BiyBodgrOxTUgGca";
+  const hashed121212 = "$2b$10$9regxHkV5B9MljyjCNdla.S52Cz5x6A6skdMuH6bKdXQA5TXwnmka";
   const defaultAdmin = [{
     id: 1,
     name: "System Admin",

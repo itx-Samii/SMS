@@ -2,9 +2,97 @@
   {
     "id": 1,
     "name": "System Admin",
-    "password": "$2b$10$.dGxXrA50I2M7Lm0RhX22uSpy4/EMv3h4dxn2BiyBodgrOxTUgGca",
+    "password": "$2b$10$9regxHkV5B9MljyjCNdla.S52Cz5x6A6skdMuH6bKdXQA5TXwnmka",
     "role": "ADMIN",
     "contactNumber": "03000000000",
-    "createdAt": "2026-03-15T05:23:15.838Z"
+    "createdAt": "2026-03-30T09:32:33.337Z"
+  },
+  {
+    "id": 201,
+    "name": "Mr. Hamza",
+    "password": "$2b$10$FB7ns3KztJFkkbnwWz9x..y7K1nfkoTs93CTmOabbLv5EoTh/1cYG",
+    "role": "TEACHER",
+    "assignedClassId": 1,
+    "createdAt": "2026-03-30T09:32:33.337Z"
+  },
+  {
+    "id": 202,
+    "name": "Ms. Hina",
+    "password": "$2b$10$lo01CKoUrJiivOEl2kBWiO9ze24KHRR609XgfoLYLxqBePcG0Gi4q",
+    "role": "TEACHER",
+    "assignedClassId": 2,
+    "createdAt": "2026-03-30T09:32:33.337Z"
+  },
+  {
+    "id": 112,
+    "name": "wasi",
+    "password": "$2b$10$TAxXcpraO4sEYqEdgShQ8OVF.kNzhCggaJyjCdJzbpxq0uvMmUub.",
+    "role": "TEACHER",
+    "assignedClassId": 3,
+    "createdAt": "2026-03-30T09:32:33.337Z"
+  },
+  {
+    "id": 203,
+    "name": "samii",
+    "password": "$2b$10$bDuORdHGpzOQWWsXJeWHPO48//t8Pgy3b5eSUPbQ4YSsio.8Dmm7O",
+    "role": "TEACHER",
+    "assignedClassId": 4,
+    "createdAt": "2026-03-30T09:32:33.337Z"
+  },
+  {
+    "id": 101,
+    "name": "Ali Ahmed",
+    "password": "$2b$10$9rssKaw.GIZ5yLullSrpUOptOGTEXkidvbK/Cymg2jIEUKR2HOvPe",
+    "role": "STUDENT",
+    "classId": 1,
+    "createdAt": "2026-03-30T09:32:33.337Z"
+  },
+  {
+    "id": 102,
+    "name": "Sara Khan",
+    "password": "$2b$10$0lHpPxkEShRNlyiedV1nHeRXKv4pOVfn1IgULFDHyGVGTJTTQLh9a",
+    "role": "STUDENT",
+    "classId": 1,
+    "createdAt": "2026-03-30T09:32:33.337Z"
+  },
+  {
+    "id": 103,
+    "name": "Bilal Raza",
+    "password": "$2b$10$fAUkPFvURBfBf52MVllTn.bbJQocL8zt6M1CpxY0k1hwGuHU6OiHa",
+    "role": "STUDENT",
+    "classId": 2,
+    "createdAt": "2026-03-30T09:32:33.337Z"
+  },
+  {
+    "id": 104,
+    "name": "Zainab Bibi",
+    "password": "$2b$10$/KXQMLcG/nC3fISTp7D0kOtZbNsUPeP47simc9pdc.y9ETZpRaP4a",
+    "role": "STUDENT",
+    "classId": 2,
+    "createdAt": "2026-03-30T09:32:33.337Z"
+  },
+  {
+    "id": 101,
+    "name": "Parent of 101",
+    "password": "$2b$10$E/1KRA1fs8gBPdnz6DYCpOzk7jLeiigD2Y19JCYDhAJ3QQF6jy6FC",
+    "role": "PARENT",
+    "childId": 101,
+    "createdAt": "2026-03-30T09:32:33.337Z"
+  },
+  {
+    "id": 102,
+    "name": "Parent of 102",
+    "password": "$2b$10$a50iqFgxXBclbZeycmGy5uGSUOc6xKTKbd3dOl8u905/X8cljqyGm",
+    "role": "PARENT",
+    "childId": 102,
+    "createdAt": "2026-03-30T09:32:33.337Z"
+  },
+  {
+    "id": 103,
+    "name": "Parent of 103",
+    "password": "$2b$10$D8C8Aq8jqa6zrwp1MEXjGeY0nTxIXLAqEB/oX1AR9.rnbelf1HIxG",
+    "role": "PARENT",
+    "childId": 103,
+    "createdAt": "2026-03-30T09:32:33.337Z"
   }
 ]

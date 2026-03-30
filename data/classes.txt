@@ -1,1 +1,22 @@
-[]
+[
+  {
+    "id": 1,
+    "name": "10th",
+    "description": "Class 10th"
+  },
+  {
+    "id": 2,
+    "name": "9th",
+    "description": "Class 9th"
+  },
+  {
+    "id": 3,
+    "name": "8th",
+    "description": "Class 8th"
+  },
+  {
+    "id": 4,
+    "name": "1st",
+    "description": "Class 1st"
+  }
+]
