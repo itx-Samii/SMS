@@ -44,9 +44,9 @@ export default function Home() {
   };
 
   return (
-    <main style={{ minHeight: "100vh", display: "flex", backgroundColor: "var(--bg-dark)" }}>
+    <main suppressHydrationWarning={true} style={{ minHeight: "100vh", display: "flex", backgroundColor: "var(--bg-dark)" }}>
       {/* Left side: Brand/Illustration area (Hidden on mobile) */}
-      <div style={{ flex: 1, position: "relative", overflow: "hidden", display: "flex", flexDirection: "column", justifyContent: "center", padding: "4rem" }} className="hide-on-mobile">
+      <div suppressHydrationWarning={true} style={{ flex: 1, position: "relative", overflow: "hidden", display: "flex", flexDirection: "column", justifyContent: "center", padding: "4rem" }} className="hide-on-mobile">
          {/* Abstract background shapes */}
          <div style={{ position: "absolute", top: "-10%", left: "-10%", width: "50%", height: "50%", background: "radial-gradient(circle, rgba(59,130,246,0.15) 0%, transparent 70%)" }}></div>
          <div style={{ position: "absolute", bottom: "-10%", right: "-10%", width: "60%", height: "60%", background: "radial-gradient(circle, rgba(139,92,246,0.1) 0%, transparent 70%)" }}></div>
