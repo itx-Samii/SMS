@@ -359,7 +359,7 @@ export default function ParentDashboard() {
           )}
 
           {activeTab === "assignments" && (
-            <ParentAssignmentsView childId={activeChildId} classId={data?.student?.classId} />
+            <ParentAssignmentsView childId={activeChildId?.toString() || ""} classId={data?.student?.classId} />
           )}
 
           {activeTab === "performance" && performanceData && (
