@@ -1,6 +1,9 @@
 import { NextResponse } from 'next/server';
 import { readData, readPipeData } from '@/lib/fileHandler';
 
+const ATTENDANCE_HEADERS = ['id', 'studentId', 'classId', 'section', 'teacherId', 'date', 'status'];
+const FEE_HEADERS = ['id', 'studentId', 'classId', 'sectionId', 'month', 'year', 'originalFee', 'discount', 'finalFee', 'paidFee', 'remainingFee', 'status', 'remarks'];
+
 export async function GET(request: Request) {
   try {
     const { searchParams } = new URL(request.url);
@@ -23,13 +26,13 @@ export async function GET(request: Request) {
 
     const stdClass = student.classId ? classes.find(c => c.id === student.classId) : undefined;
 
-    const allAttendances = await readData<any>('attendance.txt');
+    const allAttendances = await readPipeData<any>('attendance.txt', ATTENDANCE_HEADERS);
     const attendances = allAttendances.filter(a => a.studentId === studentId);
 
     const allResults = await readData<any>('results.txt');
     const results = allResults.filter(r => r.studentId === studentId);
 
-    const allFees = await readPipeData<any>('fees.txt', ['id', 'studentId', 'classId', 'sectionId', 'month', 'totalFee', 'paidFee', 'remainingFee', 'status']);
+    const allFees = await readPipeData<any>('fees.txt', FEE_HEADERS);
     const fees = allFees.filter(f => f.studentId === studentId);
 
     const allMarks = await readData<any>('marks.txt');

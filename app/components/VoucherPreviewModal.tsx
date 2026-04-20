@@ -1,7 +1,7 @@
 "use client";
 
-import React from "react";
-import { Printer, X } from "lucide-react";
+import React, { useState, useEffect } from "react";
+import { Printer, Settings, Image as ImageIcon } from "lucide-react";
 import Modal from "./Modal";
 
 interface VoucherPreviewModalProps {
@@ -11,6 +11,23 @@ interface VoucherPreviewModalProps {
 }
 
 export default function VoucherPreviewModal({ isOpen, onClose, voucher }: VoucherPreviewModalProps) {
+  const [schoolName, setSchoolName] = useState("ELITE PUBLIC SCHOOL");
+  const [slogan, setSlogan] = useState("Excellence in Education");
+  const [contact, setContact] = useState("");
+  const [logoUrl, setLogoUrl] = useState("");
+  const [showSettings, setShowSettings] = useState(false);
+  const [isAdmin, setIsAdmin] = useState(false);
+
+  useEffect(() => {
+    const userStr = localStorage.getItem("user");
+    if (userStr) {
+       try {
+         const u = JSON.parse(userStr);
+         setIsAdmin(u.role === "ADMIN");
+       } catch {}
+    }
+  }, []);
+
   if (!isOpen || !voucher) return null;
 
   const handlePrint = () => {
@@ -19,25 +36,66 @@ export default function VoucherPreviewModal({ isOpen, onClose, voucher }: Vouche
 
   return (
     <Modal isOpen={isOpen} onClose={onClose} title="Fee Voucher Preview" maxWidth="1000px">
-      <div style={{ marginBottom: "1rem", display: "flex", justifyContent: "flex-end", gap: "1rem" }} className="no-print">
-        <button className="btn-primary" onClick={handlePrint} style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
-          <Printer size={18} /> Print Now
-        </button>
-        <button className="btn-ghost" onClick={onClose}>Close</button>
+      
+      <div className="no-print" style={{ marginBottom: "1rem", display: "flex", justifyContent: "space-between", gap: "1rem", backgroundColor: "rgba(0,0,0,0.2)", padding: "1rem", borderRadius: "8px", alignItems: "center" }}>
+        <div>
+           {isAdmin && (
+             <button className="btn-secondary" onClick={() => setShowSettings(!showSettings)} style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
+               <Settings size={18} /> {showSettings ? "Hide Settings" : "Configure Voucher Header"}
+             </button>
+           )}
+        </div>
+        <div style={{ display: "flex", gap: "1rem" }}>
+           <button className="btn-primary" onClick={handlePrint} style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
+             <Printer size={18} /> Print Now
+           </button>
+           <button className="btn-ghost" onClick={onClose}>Close</button>
+        </div>
       </div>
+
+      {showSettings && (
+        <div className="no-print animate-fade-in" style={{ marginBottom: "2rem", padding: "1.5rem", border: "1px solid var(--border)", borderRadius: "8px", display: "grid", gridTemplateColumns: "1fr 1fr", gap: "1.5rem", backgroundColor: "var(--bg-dark)" }}>
+          <div>
+            <label className="form-label">School Name</label>
+            <input className="form-input" value={schoolName} onChange={e => setSchoolName(e.target.value)} />
+          </div>
+          <div>
+            <label className="form-label">Slogan / Tagline</label>
+            <input className="form-input" value={slogan} onChange={e => setSlogan(e.target.value)} />
+          </div>
+          <div>
+            <label className="form-label">Contact Number</label>
+            <input className="form-input" placeholder="e.g. +92 300 1234567" value={contact} onChange={e => setContact(e.target.value)} />
+          </div>
+          <div>
+            <label className="form-label">Logo URL</label>
+            <div style={{ display: "flex", gap: "0.5rem", alignItems: "center" }}>
+               <ImageIcon size={20} style={{ color: "var(--text-muted)" }}/>
+               <input className="form-input" placeholder="https://example.com/logo.png" style={{ flex: 1 }} value={logoUrl} onChange={e => setLogoUrl(e.target.value)} />
+            </div>
+            <span style={{ fontSize: "0.75rem", color: "var(--text-muted)", marginTop: "0.25rem", display: "block" }}>Paste an image link from the web to display on the voucher.</span>
+          </div>
+        </div>
+      )}
 
       <div id="printable-voucher" style={{ backgroundColor: "white", padding: "0.5in", borderRadius: "4px", color: "black", minHeight: "80vh" }}>
         <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: "1rem" }}>
           {["School Copy", "Student Copy", "Bank Copy"].map((copyType, idx) => (
             <div key={idx} style={{ border: "1px dashed #ccc", padding: "1rem", fontSize: "11px", position: "relative" }}>
-              <div style={{ textAlign: "center", marginBottom: "1rem" }}>
-                <h3 style={{ margin: 0, fontSize: "14px", fontWeight: "bold" }}>ELITE PUBLIC SCHOOL</h3>
-                <p style={{ margin: 0, color: "#666" }}>Excellence in Education</p>
+              
+              {/* VOUCHER HEADER */}
+              <div style={{ textAlign: "center", marginBottom: "1rem", display: "flex", flexDirection: "column", alignItems: "center" }}>
+                {logoUrl && <img src={logoUrl} alt="Logo" style={{ maxHeight: "40px", marginBottom: "0.5rem" }} />}
+                <h3 style={{ margin: 0, fontSize: "14px", fontWeight: "bold" }}>{schoolName || "SCHOOL NAME"}</h3>
+                <p style={{ margin: 0, color: "#666" }}>{slogan}</p>
+                {contact && <p style={{ margin: 0, fontSize: "9px", color: "#444", marginTop: "2px" }}>Contact: {contact}</p>}
+                
                 <div style={{ marginTop: "0.5rem", border: "1px solid black", display: "inline-block", padding: "2px 8px", fontWeight: "bold" }}>
                   {copyType}
                 </div>
               </div>
 
+              {/* VOUCHER DETAILS */}
               <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "0.5rem", marginBottom: "1rem" }}>
                 <div>
                   <span style={{ color: "#777" }}>Voucher #:</span> 

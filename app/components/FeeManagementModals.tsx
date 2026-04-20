@@ -252,8 +252,8 @@ export function BulkFeeModal({ isOpen, onClose, onSuccess, classes }: BulkFeeMod
           </div>
           <div>
             <label className="form-label">Section</label>
-            <select className="form-input" required value={formData.sectionId} onChange={e => setFormData({...formData, sectionId: e.target.value})}>
-              <option value="">-- Section --</option>
+            <select className="form-input" value={formData.sectionId} onChange={e => setFormData({...formData, sectionId: e.target.value})}>
+              <option value="">-- All/None (Default) --</option>
               <option>Sec-A</option><option>Sec-B</option><option>Sec-C</option>
             </select>
           </div>

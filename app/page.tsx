@@ -48,8 +48,8 @@ export default function Home() {
       {/* Left side: Brand/Illustration area (Hidden on mobile) */}
       <div suppressHydrationWarning={true} style={{ flex: 1, position: "relative", overflow: "hidden", display: "flex", flexDirection: "column", justifyContent: "center", padding: "4rem" }} className="hide-on-mobile">
          {/* Abstract background shapes */}
-         <div style={{ position: "absolute", top: "-10%", left: "-10%", width: "50%", height: "50%", background: "radial-gradient(circle, rgba(59,130,246,0.15) 0%, transparent 70%)" }}></div>
-         <div style={{ position: "absolute", bottom: "-10%", right: "-10%", width: "60%", height: "60%", background: "radial-gradient(circle, rgba(139,92,246,0.1) 0%, transparent 70%)" }}></div>
+         <div suppressHydrationWarning style={{ position: "absolute", top: "-10%", left: "-10%", width: "50%", height: "50%", background: "radial-gradient(circle, rgba(59,130,246,0.15) 0%, transparent 70%)" }}></div>
+         <div suppressHydrationWarning style={{ position: "absolute", bottom: "-10%", right: "-10%", width: "60%", height: "60%", background: "radial-gradient(circle, rgba(139,92,246,0.1) 0%, transparent 70%)" }}></div>
          
          <div style={{ position: "relative", zIndex: 10, maxWidth: "600px" }}>
             <div style={{ display: "inline-flex", alignItems: "center", gap: "0.75rem", marginBottom: "2rem", padding: "0.5rem 1rem", backgroundColor: "rgba(255,255,255,0.05)", borderRadius: "99px", border: "1px solid var(--border)" }}>

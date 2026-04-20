@@ -308,7 +308,7 @@ export default function StudentDashboard() {
                   initialClassId={data?.student?.classId?.toString()} 
                   classes={[{id: data?.student?.classId, name: data?.student?.class}]}
                   subjects={Array.from(new Set(data.marks?.map((m: any) => m.subject) || [])).map((s, idx) => ({id: idx, name: s}))}
-                  hideFilters={false}
+                  hideFilters={true}
                 />
               </div>
 

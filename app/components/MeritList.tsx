@@ -76,12 +76,14 @@ export default function MeritList({ initialClassId = "", classes = [], subjects 
             <span style={{ fontWeight: 600 }}>Ranking Filters:</span>
           </div>
           
-          <div style={{ flex: 1, minWidth: '150px' }}>
-            <select className="form-input" style={{ margin: 0 }} value={classId} onChange={e => setClassId(e.target.value)}>
-              <option value="">All Classes</option>
-              {classes.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
-            </select>
-          </div>
+          {classes.length > 1 && (
+            <div style={{ flex: 1, minWidth: '150px' }}>
+              <select className="form-input" style={{ margin: 0 }} value={classId} onChange={e => setClassId(e.target.value)}>
+                <option value="">All Classes</option>
+                {classes.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
+              </select>
+            </div>
+          )}
 
           <div style={{ flex: 1, minWidth: '150px' }}>
             <select className="form-input" style={{ margin: 0 }} value={section} onChange={e => setSection(e.target.value)}>

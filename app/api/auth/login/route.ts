@@ -16,10 +16,15 @@ export async function POST(request: Request) {
     // Remove strict isNaN check to allow name-based login
 
     const users = await readData<any>('users.txt');
-    const user = users.find(u => 
-      (u.id === userId || u.name.trim().toLowerCase() === id.trim().toLowerCase()) && 
-      u.role === role.toUpperCase()
-    );
+    const user = users.find(u => {
+      const matchCriteria = 
+        u.id === userId || 
+        (u.name && u.name.trim().toLowerCase() === id.trim().toLowerCase()) ||
+        (u.rollNumber && u.rollNumber.toString().trim() === id.trim()) ||
+        (u.contactNumber && u.contactNumber.toString().trim() === id.trim());
+        
+      return matchCriteria && u.role === role.toUpperCase();
+    });
 
     if (!user) {
       return NextResponse.json({ error: 'Invalid credentials' }, { status: 401 });

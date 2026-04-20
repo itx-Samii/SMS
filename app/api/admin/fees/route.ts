@@ -73,7 +73,7 @@ export async function POST(request: Request) {
       const students = users.filter((u: any) => 
         u.role === 'STUDENT' && 
         u.classId === parseInt(classId) && 
-        u.section === sectionId
+        (u.section || "") === (sectionId || "")
       );
 
       for (const student of students) {
@@ -128,7 +128,7 @@ export async function POST(request: Request) {
         return NextResponse.json({ error: 'Student not found' }, { status: 404 });
       }
       
-      if (student.classId !== parseInt(classId) || student.section !== sectionId) {
+      if (student.classId !== parseInt(classId) || (student.section || "") !== (sectionId || "")) {
         return NextResponse.json({ error: 'Student does not belong to the specified Class or Section' }, { status: 400 });
       }
 
@@ -177,9 +177,10 @@ export async function PUT(request: Request) {
     if (year) updated.year = year.toString();
     if (originalFee !== undefined) updated.originalFee = parseFloat(originalFee);
     if (discount !== undefined) updated.discount = parseFloat(discount);
-    if (finalFee !== undefined) updated.finalFee = parseFloat(finalFee);
     if (paidFee !== undefined) updated.paidFee = parseFloat(paidFee);
     
+    // Automatically recalculate derived fields correctly
+    updated.finalFee = updated.originalFee - (updated.discount || 0);
     updated.remainingFee = updated.finalFee - updated.paidFee;
     if (status) updated.status = status;
     if (remarks !== undefined) updated.remarks = remarks;

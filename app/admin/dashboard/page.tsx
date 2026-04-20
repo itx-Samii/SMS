@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import DashboardLayout, { MenuItem } from "@/app/components/DashboardLayout";
 import MetricCard from "@/app/components/MetricCard";
 import NoticesView from "@/app/components/NoticesView";
-import { Users, ClipboardList, DollarSign, LayoutDashboard, UserCheck, BookOpen, Clock, Activity, GraduationCap, Shield, Bell, Presentation, Award, ChevronRight, ChevronDown, Printer, MessageSquare, Calendar, Book, BarChart3, Trophy, Files } from "lucide-react";
+import { Users, ClipboardList, DollarSign, LayoutDashboard, UserCheck, BookOpen, Clock, Activity, GraduationCap, Shield, Bell, Presentation, Award, ChevronRight, ChevronDown, Printer, MessageSquare, Calendar, Book, BarChart3, Trophy, Files, Wallet } from "lucide-react";
 import ComposeMessageModal from "@/app/components/ComposeMessageModal";
 import PerformanceAnalytics from "@/app/components/PerformanceAnalytics";
 import ClassPerformanceAnalytics from "@/app/components/ClassPerformanceAnalytics";
@@ -19,6 +19,7 @@ import TimetableModal from "@/app/components/TimetableModal";
 import MeritList from "@/app/components/MeritList";
 import StudentDocuments from "@/app/components/StudentDocuments";
 import { exportToCSV } from "@/lib/exportUtils";
+import { SingleSalaryModal } from "@/app/components/SalaryManagementModals";
 
 interface User {
   id: number;
@@ -108,6 +109,10 @@ export default function AdminDashboard() {
   const [formErrors, setFormErrors] = useState<Record<string, string>>({});
   const [isCustomSection, setIsCustomSection] = useState(false);
 
+  const [salaries, setSalaries] = useState<any[]>([]);
+  const [showSalaryModal, setShowSalaryModal] = useState(false);
+  const [editingSalaryId, setEditingSalaryId] = useState<number | null>(null);
+
 
   const menuItems: MenuItem[] = [
     { id: "reports", label: "Dashboard", icon: LayoutDashboard },
@@ -123,6 +128,7 @@ export default function AdminDashboard() {
     { id: "analytics", label: "School Analytics", icon: BarChart3 },
     { id: "timetable", label: "Timetable", icon: Clock },
     { id: "documents", label: "Documents", icon: Files },
+    { id: "salaries", label: "Salary Management", icon: Wallet },
   ];
 
   const fetchData = async () => {
@@ -183,6 +189,13 @@ export default function AdminDashboard() {
         ]);
         if (ttRes.ok) setTimetable(await ttRes.json());
         if (clsRes.ok) setClassesData(await clsRes.json());
+        if (tchRes.ok) setTeachers(await tchRes.json());
+      } else if (activeTab === "salaries") {
+        const [salRes, tchRes] = await Promise.all([
+          fetch("/api/admin/salaries"),
+          fetch("/api/admin/users?role=TEACHER")
+        ]);
+        if (salRes.ok) setSalaries(await salRes.json());
         if (tchRes.ok) setTeachers(await tchRes.json());
       } else if (activeTab === "analytics") {
         fetchSchoolPerformance();
@@ -476,7 +489,8 @@ export default function AdminDashboard() {
       if (res.ok) {
         fetchData();
       } else {
-        alert("Failed to delete class.");
+        const data = await res.json();
+        alert(data.error || "Failed to delete class.");
       }
     } catch (error) {
       console.error(error);
@@ -512,6 +526,14 @@ export default function AdminDashboard() {
       } else {
         alert("Failed to delete fee record.");
       }
+    } catch (err) { console.error(err); }
+  };
+
+  const handleDeleteSalary = async (id: number) => {
+    if (!confirm('Delete this salary record?')) return;
+    try {
+      const res = await fetch(`/api/admin/salaries?id=${id}`, { method: 'DELETE' });
+      if (res.ok) fetchData();
     } catch (err) { console.error(err); }
   };
 
@@ -596,6 +618,14 @@ export default function AdminDashboard() {
             classes={classesData}
             teachers={teachers}
           />
+
+          <SingleSalaryModal 
+            isOpen={showSalaryModal}
+            onClose={() => { setShowSalaryModal(false); setEditingSalaryId(null); }}
+            onSuccess={fetchData}
+            editingSalary={editingSalaryId ? salaries.find(s => s.id === editingSalaryId) : null}
+            teachers={teachers}
+          />
         </>
       }
     >
@@ -614,6 +644,12 @@ export default function AdminDashboard() {
       {activeTab === "classes" && (
         <div style={{ display: "flex", justifyContent: "flex-end", marginBottom: "1.5rem" }}>
           <button className="btn-primary" onClick={() => setShowClassModal(true)}>+ Create Class</button>
+        </div>
+      )}
+
+      {activeTab === "salaries" && (
+        <div style={{ display: "flex", justifyContent: "flex-end", marginBottom: "1.5rem" }}>
+          <button className="btn-primary" onClick={() => setShowSalaryModal(true)}>+ Issue Salary</button>
         </div>
       )}
 
@@ -1160,6 +1196,57 @@ export default function AdminDashboard() {
                 </div>
               </div>
             )}
+
+          {activeTab === "salaries" && (
+            <div className="animate-fade-in">
+              <div className="glass-card">
+                <div className="table-header">
+                  <span>HR & Salary Management</span>
+                </div>
+                <div className="table-container">
+                  <table>
+                    <thead>
+                      <tr>
+                        <th>Staff/Teacher</th>
+                        <th>Month/Year</th>
+                        <th>Base</th>
+                        <th>Net Paid</th>
+                        <th>Status</th>
+                        <th>Actions</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {salaries.length === 0 ? (
+                        <tr><td colSpan={6} style={{ textAlign: "center", padding: "3rem" }}>No salary records issued yet.</td></tr>
+                      ) : (
+                        salaries.map(s => (
+                          <tr key={s.id}>
+                            <td style={{ fontWeight: 500 }}>{s.teacherName}</td>
+                            <td>{s.month} {s.year}</td>
+                            <td style={{ color: "var(--text-muted)" }}>Rs. {s.baseSalary}</td>
+                            <td style={{ fontWeight: 600, color: "var(--primary)" }}>Rs. {s.netSalary}</td>
+                            <td>
+                              <span className={`badge ${s.status === 'Paid' ? 'badge-success' : 'badge-warning'}`}>
+                                {s.status}
+                              </span>
+                            </td>
+                            <td>
+                              <div style={{ display: "flex", gap: "0.5rem" }}>
+                                <button onClick={() => { setEditingSalaryId(s.id); setShowSalaryModal(true); }} className="btn-ghost" style={{ padding: "4px" }}>Edit</button>
+                                <button onClick={() => handleDeleteSalary(s.id)} className="btn-ghost" style={{ padding: "4px", color: "var(--danger)" }}>Delete</button>
+                              </div>
+                            </td>
+                          </tr>
+                        ))
+                      )}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </div>
+          )}
+
+
 
 
           {activeTab === "notices" && (

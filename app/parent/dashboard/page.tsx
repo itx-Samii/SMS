@@ -19,6 +19,7 @@ export default function ParentDashboard() {
   const [performanceData, setPerformanceData] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState("dashboard");
+  const [activeChildId, setActiveChildId] = useState<number | null>(null);
 
   // Messaging States
   const [teachers, setTeachers] = useState<any[]>([]);
@@ -51,28 +52,43 @@ export default function ParentDashboard() {
       router.push("/");
       return;
     }
-    if (!u.childId) {
+
+    const availableChildrenIds = u.childrenIds || (u.childId ? [u.childId] : []);
+    
+    if (availableChildrenIds.length === 0) {
       alert("No child assigned to this parent account.");
       setLoading(false);
       return;
     }
     setUser(u);
+    
+    if (!activeChildId) {
+       setActiveChildId(availableChildrenIds[0]);
+    }
+  }, [router, activeChildId]);
+
+  useEffect(() => {
+    if (!activeChildId) return;
+    setLoading(true);
 
     const fetchRecords = async () => {
       try {
-        const res = await fetch(`/api/student/records?studentId=${u.childId}`);
+        const res = await fetch(`/api/student/records?studentId=${activeChildId}`);
         if (res.ok) {
           const d = await res.json();
           setData(d);
           if (d.student?.classId) fetchTimetable(d.student.classId);
-          fetchPerformance(u.childId);
+          fetchPerformance(activeChildId);
         }
-    } catch (err) {
-      console.error("Failed to fetch records");
-    } finally {
-      setLoading(false);
-    }
-  };
+      } catch (err) {
+        console.error("Failed to fetch records");
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchRecords();
+  }, [activeChildId]);
 
   const fetchPerformance = async (studentId: any) => {
     try {
@@ -87,9 +103,6 @@ export default function ParentDashboard() {
       if (res.ok) setTimetable(await res.json());
     } catch { console.error("Failed to fetch timetable"); }
   };
-
-  fetchRecords();
-  }, [router]);
 
   useEffect(() => {
     if (user?.id) {
@@ -191,14 +204,32 @@ export default function ParentDashboard() {
         <>
           {activeTab === "dashboard" && (
             <div className="animate-fade-in">
-              <div style={{ marginBottom: "2rem", display: "flex", alignItems: "center", gap: "1rem" }}>
-                <div className="avatar" style={{ width: 48, height: 48 }}>
-                   <img src={`https://ui-avatars.com/api/?name=${encodeURIComponent(data.student.name)}&background=10b981&color=fff&size=48`} alt="" style={{ width: "100%", height: "100%" }} />
+              <div style={{ marginBottom: "2rem", display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: "1rem" }}>
+                <div style={{ display: "flex", alignItems: "center", gap: "1rem" }}>
+                  <div className="avatar" style={{ width: 48, height: 48 }}>
+                     <img src={`https://ui-avatars.com/api/?name=${encodeURIComponent(data.student.name)}&background=10b981&color=fff&size=48`} alt="" style={{ width: "100%", height: "100%" }} />
+                  </div>
+                  <div>
+                     <h2 style={{ fontSize: "1.25rem" }}>Child Overview: {data.student.name}</h2>
+                     <p style={{ color: "var(--text-muted)", fontSize: "0.9rem" }}>{data.student.class || 'No Class Assigned'}</p>
+                  </div>
                 </div>
-                <div>
-                   <h2 style={{ fontSize: "1.25rem" }}>Child Overview: {data.student.name}</h2>
-                   <p style={{ color: "var(--text-muted)", fontSize: "0.9rem" }}>{data.student.class || 'No Class Assigned'}</p>
-                </div>
+
+                {((user.childrenIds && user.childrenIds.length > 1) || (!user.childrenIds && user.childId)) && (
+                  <div style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
+                     <span style={{ fontSize: "0.9rem", color: "var(--text-muted)" }}>Switch Active Profile:</span>
+                     <select 
+                       className="form-input" 
+                       style={{ width: "220px", cursor: "pointer", fontWeight: 600 }}
+                       value={activeChildId || ""}
+                       onChange={(e) => setActiveChildId(parseInt(e.target.value))}
+                     >
+                        {(user.childrenIds || [user.childId]).map((cid: any) => (
+                           <option key={cid} value={cid}>👤 Student ID #{cid}</option>
+                        ))}
+                     </select>
+                  </div>
+                )}
               </div>
 
               <div className="grid-metrics">
@@ -328,7 +359,7 @@ export default function ParentDashboard() {
           )}
 
           {activeTab === "assignments" && (
-            <ParentAssignmentsView childId={user.childId} classId={data?.student?.classId} />
+            <ParentAssignmentsView childId={activeChildId} classId={data?.student?.classId} />
           )}
 
           {activeTab === "performance" && performanceData && (

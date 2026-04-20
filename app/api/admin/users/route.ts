@@ -125,27 +125,47 @@ export async function POST(request: Request) {
 
     users.push(newUser);
 
-    // Automatically create a linked parent if student
+    // Automatically link or create a parent if student
     if (roleUpper === 'STUDENT') {
-      const parentId = await generateId('users.txt'); // Note: This is slightly risky if multiple parallel requests happen, but okay for this architecture
-      const parentName = fatherName || `Parent of ${name}`;
-      const parentPassword = await bcrypt.hash('123', salt);
-      
-      const newParent: any = {
-        id: parentId,
-        name: parentName,
-        password: parentPassword,
-        role: 'PARENT',
-        childId: newId,
-        contactNumber: parentContactNumber || null,
-        createdAt: new Date().toISOString()
-      };
-      
-      // Ensure we don't have duplicate IDs if generateId isn't perfectly transactional
-      const parentIdFixed = Math.max(newId, ...users.map((u: any) => u.id)) + 1;
-      newParent.id = parentIdFixed;
-      
-      users.push(newParent);
+      const parentContact = parentContactNumber || null;
+      // Search for an existing parent by contact number
+      const existingParentIndex = parentContact ? users.findIndex((u: any) => u.role === 'PARENT' && u.contactNumber === parentContact) : -1;
+
+      if (existingParentIndex !== -1) {
+        // Merge into existing parent
+        if (!users[existingParentIndex].childrenIds) {
+          users[existingParentIndex].childrenIds = [users[existingParentIndex].childId].filter(Boolean);
+        }
+        if (!users[existingParentIndex].childrenIds.includes(newId)) {
+          users[existingParentIndex].childrenIds.push(newId);
+        }
+        // Preserve legacy primary child assignment just in case
+        if (!users[existingParentIndex].childId) {
+          users[existingParentIndex].childId = newId;
+        }
+      } else {
+        // Create new Parent if no match found
+        const parentId = await generateId('users.txt');
+        const parentName = fatherName || `Parent of ${name}`;
+        const parentPassword = await bcrypt.hash('123', salt);
+        
+        const newParent: any = {
+          id: parentId,
+          name: parentName,
+          password: parentPassword,
+          role: 'PARENT',
+          childId: newId,
+          childrenIds: [newId],
+          contactNumber: parentContact,
+          createdAt: new Date().toISOString()
+        };
+        
+        // Ensure ID transactional safety
+        const parentIdFixed = Math.max(newId, ...users.map((u: any) => u.id)) + 1;
+        newParent.id = parentIdFixed;
+        
+        users.push(newParent);
+      }
     }
 
     await writeData('users.txt', users);

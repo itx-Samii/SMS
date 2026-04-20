@@ -35,21 +35,26 @@ export default function ComposeMessageModal({
   const [errorMsg, setErrorMsg] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
 
+  const isAdmin = sender.role === "ADMIN";
+
   // Initialize form when opened
   useEffect(() => {
     if (isOpen) {
+      const type = isAdmin ? (initialData?.type || "notification") : "message";
+      const aud = isAdmin ? (initialData?.audience || "ALL") : "USER";
+      
       setFormData({
         title: initialData?.title || "",
         content: "",
-        audience: initialData?.audience || "ALL",
+        audience: aud,
         detailTarget: initialData?.detailTarget || "",
         priority: "Normal",
-        type: initialData?.type || "notification"
+        type: type
       });
       setErrorMsg("");
       setIsSubmitting(false);
     }
-  }, [isOpen, initialData]);
+  }, [isOpen, initialData, isAdmin]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -130,28 +135,30 @@ export default function ComposeMessageModal({
         <div>
           <label className="form-label" style={{ marginBottom: "0.25rem", display: "block" }}>Type</label>
           <div style={{ display: "flex", gap: "0.5rem" }}>
-            <button 
-              type="button"
-              onClick={() => setFormData({...formData, type: 'notification'})}
-              style={{ 
-                flex: 1, 
-                padding: "0.5rem", 
-                borderRadius: "8px", 
-                fontSize: "0.85rem",
-                display: "flex", 
-                alignItems: "center", 
-                justifyContent: "center",
-                gap: "0.4rem",
-                border: "1px solid",
-                backgroundColor: formData.type === 'notification' ? "rgba(59,130,246,0.1)" : "transparent",
-                borderColor: formData.type === 'notification' ? "var(--primary)" : "var(--border)",
-                color: formData.type === 'notification' ? "var(--primary)" : "var(--text-muted)",
-                cursor: "pointer",
-                transition: "all 0.2s"
-              }}
-            >
-              <Bell size={16} /> Notification
-            </button>
+            {isAdmin && (
+              <button 
+                type="button"
+                onClick={() => setFormData({...formData, type: 'notification'})}
+                style={{ 
+                  flex: 1, 
+                  padding: "0.5rem", 
+                  borderRadius: "8px", 
+                  fontSize: "0.85rem",
+                  display: "flex", 
+                  alignItems: "center", 
+                  justifyContent: "center",
+                  gap: "0.4rem",
+                  border: "1px solid",
+                  backgroundColor: formData.type === 'notification' ? "rgba(59,130,246,0.1)" : "transparent",
+                  borderColor: formData.type === 'notification' ? "var(--primary)" : "var(--border)",
+                  color: formData.type === 'notification' ? "var(--primary)" : "var(--text-muted)",
+                  cursor: "pointer",
+                  transition: "all 0.2s"
+                }}
+              >
+                <Bell size={16} /> Notification
+              </button>
+            )}
             <button 
               type="button"
               onClick={() => setFormData({...formData, type: 'message'})}
@@ -201,15 +208,22 @@ export default function ComposeMessageModal({
             value={formData.audience}
             onChange={(e) => setFormData({...formData, audience: e.target.value, detailTarget: ""})}
             style={{ padding: "0.5rem", margin: 0, height: "38px" }}
+            disabled={!isAdmin}
           >
-            <option value="ALL">Everyone</option>
-            <option value="STUDENT">All Students</option>
-            <option value="TEACHER">All Teachers</option>
-            <option value="PARENT">All Parents</option>
-            <option value="ADMIN">All Admins</option>
-            <option value="CLASS">Specific Class</option>
-            <option value="SECTION">Specific Section</option>
-            <option value="USER">Specific User</option>
+            {isAdmin ? (
+              <>
+                <option value="ALL">Everyone</option>
+                <option value="STUDENT">All Students</option>
+                <option value="TEACHER">All Teachers</option>
+                <option value="PARENT">All Parents</option>
+                <option value="ADMIN">All Admins</option>
+                <option value="CLASS">Specific Class</option>
+                <option value="SECTION">Specific Section</option>
+                <option value="USER">Specific User</option>
+              </>
+            ) : (
+                <option value="USER">Specific User</option>
+            )}
           </select>
         </div>
 

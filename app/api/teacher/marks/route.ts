@@ -60,8 +60,8 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Student not found' }, { status: 404 });
     }
     
-    if (student.classId !== parseInt(classId, 10) || student.section !== section) {
-      return NextResponse.json({ error: 'Student does not belong to the specified Class or Section' }, { status: 400 });
+    if (student.classId !== parseInt(classId, 10) || (student.section || "") !== (section || "")) {
+      return NextResponse.json({ error: 'Student does not belong to the specified class/section' }, { status: 400 });
     }
 
     // Strict Class Teacher Validation

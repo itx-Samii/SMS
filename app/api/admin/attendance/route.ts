@@ -1,10 +1,12 @@
 import { NextResponse } from 'next/server';
-import { readData } from '@/lib/fileHandler';
+import { readData, readPipeData } from '@/lib/fileHandler';
+
+const ATTENDANCE_HEADERS = ['id', 'studentId', 'classId', 'section', 'teacherId', 'date', 'status'];
 
 // GET all attendance records
 export async function GET() {
   try {
-    const attendances = await readData<any>('attendance.txt');
+    const attendances = await readPipeData<any>('attendance.txt', ATTENDANCE_HEADERS);
     const users = await readData<any>('users.txt');
     const classes = await readData<any>('classes.txt');
 
