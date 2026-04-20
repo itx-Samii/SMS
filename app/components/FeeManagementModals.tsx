@@ -55,7 +55,7 @@ export function SingleFeeModal({ isOpen, onClose, onSuccess, editingFee, student
       classId: s.classId?.toString() || "",
       sectionId: s.section || ""
     });
-    setSearchTerm(`${s.name} (Roll: ${s.rollNumber})`);
+    setSearchTerm(`${s.name} (Roll: ${s.rollNumber || 'N/A'})`);
   };
 
   const filteredStudents = searchTerm && !formData.studentId ? students.filter(s => 
@@ -77,7 +77,8 @@ export function SingleFeeModal({ isOpen, onClose, onSuccess, editingFee, student
         onSuccess();
         onClose();
       } else {
-        alert("Failed to save fee record.");
+        const errorData = await res.json().catch(() => null);
+        alert(`Failed to save fee record. Reason: ${errorData?.error || 'Unknown Error'}`);
       }
     } catch {
       alert("Error.");

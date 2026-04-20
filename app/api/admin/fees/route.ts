@@ -128,8 +128,8 @@ export async function POST(request: Request) {
         return NextResponse.json({ error: 'Student not found' }, { status: 404 });
       }
       
-      if (student.classId !== parseInt(classId) || (student.section || "") !== (sectionId || "")) {
-        return NextResponse.json({ error: 'Student does not belong to the specified Class or Section' }, { status: 400 });
+      if (student.classId?.toString() !== classId?.toString() || (student.section || "") !== (sectionId || "")) {
+        return NextResponse.json({ error: `Student does not belong to the specified Class or Section (${classId}, ${sectionId})` }, { status: 400 });
       }
 
       const oFee = parseFloat(originalFee);
